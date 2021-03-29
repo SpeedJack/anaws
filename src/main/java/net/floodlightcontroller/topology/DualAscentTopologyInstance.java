@@ -650,10 +650,14 @@ public class DualAscentTopologyInstance
 		BroadcastTree tree = costrusciBroadcastTree(root, linkCost, finalCluster);
 
 		Integer cost = 0;
-		if (tree.getLinks().values() != null) {
-			for (Link link : tree.getLinks().values())
-				cost += linkCost.get(link);
-		}
+		if (tree.getLinks().values() != null) { 
+	        for (Link link : tree.getLinks().values()) {
+	        	if (link != null)	        		
+	        		cost += linkCost.get(link);
+	        	else 
+	        		log.info("TROVATO LINK A NULL");
+	        }
+        }
 		log.info("Costo dualCost del dualAscent: {}", cost.toString());
 		return tree;
 
