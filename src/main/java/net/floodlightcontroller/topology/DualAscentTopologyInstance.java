@@ -17,15 +17,23 @@
 package net.floodlightcontroller.topology;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.Map.Entry;
+
+import net.floodlightcontroller.routing.BroadcastTree;
+import net.floodlightcontroller.routing.Link;
+import net.floodlightcontroller.routing.Route;
+import net.floodlightcontroller.routing.RouteId;
+import net.floodlightcontroller.servicechaining.ServiceChain;
+import net.floodlightcontroller.util.ClusterDFS;
 
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.OFPort;
@@ -37,23 +45,12 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import net.floodlightcontroller.util.ClusterDFS;
-import net.floodlightcontroller.core.annotations.LogMessageCategory;
-import net.floodlightcontroller.core.annotations.LogMessageDoc;
-import net.floodlightcontroller.routing.BroadcastTree;
-import net.floodlightcontroller.routing.Link;
-import net.floodlightcontroller.routing.Route;
-import net.floodlightcontroller.routing.RouteId;
-import net.floodlightcontroller.servicechaining.ServiceChain;
-
 /**
  * A representation of a network topology. Used internally by
  * {@link TopologyManager}
  */
-@LogMessageCategory("Network Topology")
 public class DualAscentTopologyInstance
 {
-
 	public static final short LT_SH_LINK = 1;
 	public static final short LT_BD_LINK = 2;
 	public static final short LT_TUNNEL = 3;
@@ -66,10 +63,10 @@ public class DualAscentTopologyInstance
 
 	protected Map<DatapathId, Set<OFPort>> switchPorts; // Set of ports for each switch
 	/**
-	 * Set of switch ports that are marked as blocked. A set of blocked switch ports
-	 * may be provided at the time of instantiation. In addition, we may add
-	 * additional ports to this set.
-	 */
+	* Set of switch ports that are marked as blocked. A set of blocked switch ports
+	* may be provided at the time of instantiation. In addition, we may add
+	* additional ports to this set.
+	*/
 	protected Set<NodePortTuple> blockedPorts;
 	protected Map<NodePortTuple, Set<Link>> switchPortLinks; // Set of links organized by node port tuple
 	/** Set of links that are blocked. */
@@ -84,8 +81,47 @@ public class DualAscentTopologyInstance
 
 	// States for routing
 	protected Map<DatapathId, BroadcastTree> destinationRootedTrees;
-	protected Map<DatapathId, Set<NodePortTuple>> clusterBroadcastNodePorts;
+
+	protected Map<DatapathId, Set<NodePortTuple>> clusterPorts;
 	protected Map<DatapathId, BroadcastTree> clusterBroadcastTrees;
+
+	protected Map<DatapathId, Set<NodePortTuple>> clusterBroadcastNodePorts;
+	// Broadcast tree over whole topology which may be consisted of multiple
+	// clusters
+	protected BroadcastTree finiteBroadcastTree;
+	// Set of NodePortTuples of the finiteBroadcastTree
+	protected Set<NodePortTuple> broadcastNodePorts;
+	// destinationRootedTrees over whole topology (not only intra-cluster tree)
+	protected Map<DatapathId, BroadcastTree> destinationRootedFullTrees;
+	// Set of all links organized by node port tuple. Note that switchPortLinks does
+	// not contain all links of multi-cluster topology.
+	protected Map<NodePortTuple, Set<Link>> allLinks;
+	// Set of all ports organized by DatapathId. Note that switchPorts map contains
+	// only ports with links.
+	protected Map<DatapathId, Set<OFPort>> allPorts;
+	// Maps broadcast ports to DatapathId
+	protected Map<DatapathId, Set<OFPort>> broadcastPortMap;
+
+	protected class PathCacheLoader extends CacheLoader<RouteId, Route>
+	{
+		DualAscentTopologyInstance ti;
+
+		PathCacheLoader(DualAscentTopologyInstance ti)
+		{
+			this.ti = ti;
+		}
+
+		@Override
+		public Route load(RouteId rid)
+		{
+			return ti.buildroute(rid);
+		}
+	}
+
+	// Path cache loader is defined for loading a path when it not present
+	// in the cache.
+	private final PathCacheLoader pathCacheLoader = new PathCacheLoader(this);
+	protected LoadingCache<RouteId, Route> pathcache;
 
 //------------------------------------------------------------------------------
 	private Map<Link, Integer> reducedCost = new HashMap<>(); // S
@@ -109,63 +145,21 @@ public class DualAscentTopologyInstance
 	};
 //------------------------------------------------------------------------------
 
-	protected class PathCacheLoader extends CacheLoader<RouteId, Route>
-	{
-		DualAscentTopologyInstance ti;
-
-		PathCacheLoader(DualAscentTopologyInstance ti)
-		{
-			this.ti = ti;
-		}
-
-		@Override
-		public Route load(RouteId rid)
-		{
-			return ti.buildroute(rid);
-		}
-	}
-
-	// Path cache loader is defined for loading a path when it not present
-	// in the cache.
-	private final PathCacheLoader pathCacheLoader = new PathCacheLoader(this);
-	protected LoadingCache<RouteId, Route> pathcache;
-
-	public DualAscentTopologyInstance()
-	{
-		this.switches = new HashSet<DatapathId>();
-		this.switchPorts = new HashMap<DatapathId, Set<OFPort>>();
-		this.switchPortLinks = new HashMap<NodePortTuple, Set<Link>>();
-		this.broadcastDomainPorts = new HashSet<NodePortTuple>();
-		this.tunnelPorts = new HashSet<NodePortTuple>();
-		this.blockedPorts = new HashSet<NodePortTuple>();
-		this.blockedLinks = new HashSet<Link>();
-	}
-
-	public DualAscentTopologyInstance(Map<DatapathId, Set<OFPort>> switchPorts,
-		Map<NodePortTuple, Set<Link>> switchPortLinks, Set<NodePortTuple> broadcastDomainPorts)
-	{
-		this.switches = new HashSet<DatapathId>(switchPorts.keySet());
-		this.switchPorts = new HashMap<DatapathId, Set<OFPort>>(switchPorts);
-		this.switchPortLinks = new HashMap<NodePortTuple, Set<Link>>(switchPortLinks);
-		this.broadcastDomainPorts = new HashSet<NodePortTuple>(broadcastDomainPorts);
-		this.tunnelPorts = new HashSet<NodePortTuple>();
-		this.blockedPorts = new HashSet<NodePortTuple>();
-		this.blockedLinks = new HashSet<Link>();
-
-		clusters = new HashSet<Cluster>();
-		switchClusterMap = new HashMap<DatapathId, Cluster>();
-	}
-
 	public DualAscentTopologyInstance(Map<DatapathId, Set<OFPort>> switchPorts, Set<NodePortTuple> blockedPorts,
 		Map<NodePortTuple, Set<Link>> switchPortLinks, Set<NodePortTuple> broadcastDomainPorts,
-		Set<NodePortTuple> tunnelPorts)
+		Set<NodePortTuple> tunnelPorts, Map<NodePortTuple, Set<Link>> allLinks,
+		Map<DatapathId, Set<OFPort>> allPorts)
 	{
 
-		// copy these structures
 		this.switches = new HashSet<DatapathId>(switchPorts.keySet());
 		this.switchPorts = new HashMap<DatapathId, Set<OFPort>>();
 		for (DatapathId sw : switchPorts.keySet()) {
 			this.switchPorts.put(sw, new HashSet<OFPort>(switchPorts.get(sw)));
+		}
+
+		this.allPorts = new HashMap<DatapathId, Set<OFPort>>();
+		for (DatapathId sw : allPorts.keySet()) {
+			this.allPorts.put(sw, new HashSet<OFPort>(allPorts.get(sw)));
 		}
 
 		this.blockedPorts = new HashSet<NodePortTuple>(blockedPorts);
@@ -173,15 +167,25 @@ public class DualAscentTopologyInstance
 		for (NodePortTuple npt : switchPortLinks.keySet()) {
 			this.switchPortLinks.put(npt, new HashSet<Link>(switchPortLinks.get(npt)));
 		}
+
+		this.allLinks = new HashMap<NodePortTuple, Set<Link>>();
+		for (NodePortTuple npt : allLinks.keySet()) {
+			this.allLinks.put(npt, new HashSet<Link>(allLinks.get(npt)));
+		}
+
 		this.broadcastDomainPorts = new HashSet<NodePortTuple>(broadcastDomainPorts);
 		this.tunnelPorts = new HashSet<NodePortTuple>(tunnelPorts);
 
-		blockedLinks = new HashSet<Link>();
-		clusters = new HashSet<Cluster>();
-		switchClusterMap = new HashMap<DatapathId, Cluster>();
-		destinationRootedTrees = new HashMap<DatapathId, BroadcastTree>();
-		clusterBroadcastTrees = new HashMap<DatapathId, BroadcastTree>();
-		clusterBroadcastNodePorts = new HashMap<DatapathId, Set<NodePortTuple>>();
+		this.blockedLinks = new HashSet<Link>();
+
+		this.clusters = new HashSet<Cluster>();
+		this.switchClusterMap = new HashMap<DatapathId, Cluster>();
+		this.destinationRootedTrees = new HashMap<DatapathId, BroadcastTree>();
+		this.destinationRootedFullTrees = new HashMap<DatapathId, BroadcastTree>();
+		this.broadcastNodePorts = new HashSet<NodePortTuple>();
+		this.broadcastPortMap = new HashMap<DatapathId, Set<OFPort>>();
+		this.clusterBroadcastTrees = new HashMap<DatapathId, BroadcastTree>();
+		this.clusterBroadcastNodePorts = new HashMap<DatapathId, Set<NodePortTuple>>();
 
 		pathcache = CacheBuilder.newBuilder().concurrencyLevel(4).maximumSize(1000L)
 			.build(new CacheLoader<RouteId, Route>() {
@@ -194,7 +198,6 @@ public class DualAscentTopologyInstance
 
 	public void compute()
 	{
-
 		// Step 1: Compute clusters ignoring broadcast domain links
 		// Create nodes for clusters in the higher level topology
 		// Must ignore blocked links.
@@ -216,22 +219,60 @@ public class DualAscentTopologyInstance
 		// clusters as possible.
 		calculateBroadcastNodePortsInClusters();
 
-		// Step 4. print topology.
+		// Step 4. Compute e2e shortest path trees on entire topology for unicast
+		// routing.
+		// The trees are rooted at the destination.
+		// Cost for tunnel links and direct links are the same.
+		calculateAllShortestPaths();
+
+		// Step 5. Compute broadcast tree for the whole topology (needed to avoid
+		// loops).
+		// Cost for tunnel links are high to discourage use of
+		// tunnel links. The cost is set to the number of nodes
+		// in the cluster + 1, to use as minimum number of
+		// clusters as possible.
+		calculateAllBroadcastNodePorts();
+
+		// Step 6. Compute set of ports for broadcasting. Edge ports are included.
+		calculateBroadcastPortMap();
+
+		// Step 7. print topology.
 		printTopology();
+	}
+
+	/*
+	* Checks if OF port is edge port
+	*/
+	public boolean isEdge(DatapathId sw, OFPort portId)
+	{
+		NodePortTuple np = new NodePortTuple(sw, portId);
+		if (allLinks.get(np) == null || allLinks.get(np).isEmpty()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/*
+	* Returns broadcast ports for the given DatapathId
+	*/
+	public Set<OFPort> swBroadcastPorts(DatapathId sw)
+	{
+		return this.broadcastPortMap.get(sw);
+
 	}
 
 	public void printTopology()
 	{
-		if (log.isTraceEnabled()) {
-			log.trace("-----------------------------------------------");
-			log.trace("Links: {}", this.switchPortLinks);
-			log.trace("broadcastDomainPorts: {}", broadcastDomainPorts);
-			log.trace("tunnelPorts: {}", tunnelPorts);
-			log.trace("clusters: {}", clusters);
-			log.trace("destinationRootedTrees: {}", destinationRootedTrees);
-			log.trace("clusterBroadcastNodePorts: {}", clusterBroadcastNodePorts);
-			log.trace("-----------------------------------------------");
-		}
+		log.debug("-----------------Topology-----------------------");
+		log.debug("All Links: {}", allLinks);
+		log.debug("Broadcast Tree: {}", finiteBroadcastTree);
+		log.debug("Broadcast Domain Ports: {}", broadcastDomainPorts);
+		log.debug("Tunnel Ports: {}", tunnelPorts);
+		log.debug("Clusters: {}", clusters);
+		log.debug("Destination Rooted Full Trees: {}", destinationRootedFullTrees);
+		log.debug("Broadcast Node Ports: {}", broadcastNodePorts);
+		log.debug("-----------------------------------------------");
 	}
 
 	protected void addLinksToOpenflowDomains()
@@ -261,19 +302,18 @@ public class DualAscentTopologyInstance
 	}
 
 	/**
-	 * @author Srinivasan Ramasubramanian
-	 *
-	 *         This function divides the network into clusters. Every cluster is a
-	 *         strongly connected component. The network may contain unidirectional
-	 *         links. The function calls dfsTraverse for performing depth first
-	 *         search and cluster formation.
-	 *
-	 *         The computation of strongly connected components is based on Tarjan's
-	 *         algorithm. For more details, please see the Wikipedia link below.
-	 *
-	 *         http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-	 */
-	@LogMessageDoc(level = "ERROR", message = "No DFS object for switch {} found.", explanation = "The internal state of the topology module is corrupt", recommendation = LogMessageDoc.REPORT_CONTROLLER_BUG)
+	* @author Srinivasan Ramasubramanian
+	*
+	*         This function divides the network into clusters. Every cluster is a
+	*         strongly connected component. The network may contain unidirectional
+	*         links. The function calls dfsTraverse for performing depth first
+	*         search and cluster formation.
+	*
+	*         The computation of strongly connected components is based on Tarjan's
+	*         algorithm. For more details, please see the Wikipedia link below.
+	*
+	*         http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+	*/
 	public void identifyOpenflowDomains()
 	{
 		Map<DatapathId, ClusterDFS> dfsList = new HashMap<DatapathId, ClusterDFS>();
@@ -285,6 +325,7 @@ public class DualAscentTopologyInstance
 			ClusterDFS cdfs = new ClusterDFS();
 			dfsList.put(key, cdfs);
 		}
+
 		Set<DatapathId> currSet = new HashSet<DatapathId>();
 
 		for (DatapathId sw : switches) {
@@ -298,39 +339,38 @@ public class DualAscentTopologyInstance
 	}
 
 	/**
-	 * @author Srinivasan Ramasubramanian
-	 *
-	 *         This algorithm computes the depth first search (DFS) traversal of the
-	 *         switches in the network, computes the lowpoint, and creates clusters
-	 *         (of strongly connected components).
-	 *
-	 *         The computation of strongly connected components is based on Tarjan's
-	 *         algorithm. For more details, please see the Wikipedia link below.
-	 *
-	 *         http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
-	 *
-	 *         The initialization of lowpoint and the check condition for when a
-	 *         cluster should be formed is modified as we do not remove switches
-	 *         that are already part of a cluster.
-	 *
-	 *         A return value of -1 indicates that dfsTraverse failed somewhere in
-	 *         the middle of computation. This could happen when a switch is removed
-	 *         during the cluster computation procedure.
-	 *
-	 * @param parentIndex: DFS index of the parent node
-	 * @param currIndex:   DFS index to be assigned to a newly visited node
-	 * @param currSw:      ID of the current switch
-	 * @param dfsList:     HashMap of DFS data structure for each switch
-	 * @param currSet:     Set of nodes in the current cluster in formation
-	 * @return long: DSF index to be used when a new node is visited
-	 */
+	* @author Srinivasan Ramasubramanian
+	*
+	*         This algorithm computes the depth first search (DFS) traversal of the
+	*         switches in the network, computes the lowpoint, and creates clusters
+	*         (of strongly connected components).
+	*
+	*         The computation of strongly connected components is based on Tarjan's
+	*         algorithm. For more details, please see the Wikipedia link below.
+	*
+	*         http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+	*
+	*         The initialization of lowpoint and the check condition for when a
+	*         cluster should be formed is modified as we do not remove switches
+	*         that are already part of a cluster.
+	*
+	*         A return value of -1 indicates that dfsTraverse failed somewhere in
+	*         the middle of computation. This could happen when a switch is removed
+	*         during the cluster computation procedure.
+	*
+	* @param parentIndex: DFS index of the parent node
+	* @param currIndex:   DFS index to be assigned to a newly visited node
+	* @param currSw:      ID of the current switch
+	* @param dfsList:     HashMap of DFS data structure for each switch
+	* @param currSet:     Set of nodes in the current cluster in formation
+	* @return long: DSF index to be used when a new node is visited
+	*/
 	private long dfsTraverse(long parentIndex, long currIndex, DatapathId currSw,
 		Map<DatapathId, ClusterDFS> dfsList, Set<DatapathId> currSet)
 	{
 
 		// Get the DFS object corresponding to the current switch
 		ClusterDFS currDFS = dfsList.get(currSw);
-		// Get all the links corresponding to this switch
 
 		Set<DatapathId> nodesInMyCluster = new HashSet<DatapathId>();
 		Set<DatapathId> myCurrSet = new HashSet<DatapathId>();
@@ -372,9 +412,9 @@ public class DualAscentTopologyInstance
 
 					if (dstDFS.getDfsIndex() < currDFS.getDfsIndex()) {
 						// could be a potential lowpoint
-						if (dstDFS.getDfsIndex() < currDFS.getLowpoint())
+						if (dstDFS.getDfsIndex() < currDFS.getLowpoint()) {
 							currDFS.setLowpoint(dstDFS.getDfsIndex());
-
+						}
 					} else if (!dstDFS.isVisited()) {
 						// make a DFS visit
 						currIndex = dfsTraverse(currDFS.getDfsIndex(), currIndex, dstSw,
@@ -384,8 +424,9 @@ public class DualAscentTopologyInstance
 							return -1;
 
 						// update lowpoint after the visit
-						if (dstDFS.getLowpoint() < currDFS.getLowpoint())
+						if (dstDFS.getLowpoint() < currDFS.getLowpoint()) {
 							currDFS.setLowpoint(dstDFS.getLowpoint());
+						}
 
 						nodesInMyCluster.addAll(myCurrSet);
 						myCurrSet.clear();
@@ -432,11 +473,11 @@ public class DualAscentTopologyInstance
 	}
 
 	/**
-	 * Returns true if a link has either one of its switch ports blocked.
-	 * 
-	 * @param l
-	 * @return
-	 */
+	* Returns true if a link has either one of its switch ports blocked.
+	* 
+	* @param l
+	* @return
+	*/
 	protected boolean isBlockedLink(Link l)
 	{
 		NodePortTuple n1 = new NodePortTuple(l.getSrc(), l.getSrcPort());
@@ -551,19 +592,19 @@ public class DualAscentTopologyInstance
 		return false;
 	}
 
-	private HashSet<DatapathId> findRootComp(DatapathId root, Cluster completeGraph, Cluster auxiliaryGraph)
+	private HashSet<DatapathId> findRootComp(DatapathId root, Map<DatapathId, Set<Link>> links, Cluster auxiliaryGraph)
 	{
 		HashSet<DatapathId> rootComponent = new HashSet<>();
 
 		// Find node for which neither root nor any other node dangles from.
-		externCycle: for (DatapathId node : completeGraph.getNodes()) {
+		externCycle: for (DatapathId node : links.keySet()) {
 			rootComponent.clear();
 			if (node.equals(root)) // tutti target tranne root
 				continue;
 			if (areConnected(auxiliaryGraph, root, node))
 				continue;
 			rootComponent.add(node);
-			for (DatapathId otherNode : completeGraph.getNodes()) {
+			for (DatapathId otherNode : links.keySet()) {
 				if (otherNode.equals(root) || otherNode.equals(node))
 					continue;
 				boolean con21 = areConnected(auxiliaryGraph, otherNode, node);
@@ -587,7 +628,7 @@ public class DualAscentTopologyInstance
 		return null;
 	}
 
-	protected BroadcastTree dualAscent(Cluster completeGraph, DatapathId root, Map<Link, Integer> linkCost,
+	protected BroadcastTree dualAscent(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
 		boolean isDstRooted)
 	{
 		/*
@@ -608,9 +649,9 @@ public class DualAscentTopologyInstance
 		reducedCost.clear();
 		finalCut.clear();
 		dualCost = 0;
-		for (DatapathId node : completeGraph.getNodes()) {
+		for (DatapathId node : links.keySet()) {
 			V_i_k.put(node, 0);
-			for (Link link : completeGraph.getLinks().get(node)) {
+			for (Link link : links.get(node)) {
 				W_i_j_k.put(link, 0);
 				if (linkCost.get(link) == null) {
 					linkCost.put(link, 1);
@@ -621,12 +662,12 @@ public class DualAscentTopologyInstance
 		}
 
 		// Scelta del root component da analizzare
-		Set<DatapathId> rootComponent = findRootComp(root, completeGraph, auxiliaryGraph);
+		Set<DatapathId> rootComponent = findRootComp(root, links, auxiliaryGraph);
 		while (rootComponent != null) {
-			Link minLink = findMinArc(rootComponent, completeGraph, auxiliaryGraph);
-			editCosts(rootComponent, minLink, completeGraph, auxiliaryGraph);
+			Link minLink = findMinArc(rootComponent, links, auxiliaryGraph);
+			editCosts(rootComponent, minLink, links, auxiliaryGraph);
 			addArc(minLink, auxiliaryGraph);
-			rootComponent = findRootComp(root, completeGraph, auxiliaryGraph);
+			rootComponent = findRootComp(root, links, auxiliaryGraph);
 		}
 
 		// visto che floodlight vuole un broadcast tree alla fine,
@@ -657,6 +698,12 @@ public class DualAscentTopologyInstance
 		log.info("Costo dualCost del dualAscent: {}", cost.toString());
 		return tree;
 
+	}
+
+	protected BroadcastTree clusterDualAscent(Cluster c, DatapathId root, Map<Link, Integer> linkCost,
+		boolean isDstRooted)
+	{
+		return dualAscent(c.links, root, linkCost, isDstRooted);
 	}
 
 	private BroadcastTree costrusciBroadcastTree(DatapathId root, Map<Link, Integer> linkCost,
@@ -743,7 +790,7 @@ public class DualAscentTopologyInstance
 		}
 	}
 
-	private void editCosts(Set<DatapathId> rootComponent, Link minLink, Cluster completeGraph,
+	private void editCosts(Set<DatapathId> rootComponent, Link minLink, Map<DatapathId, Set<Link>> links,
 		Cluster auxiliaryGraph)
 	{
 		// E' possibile che il grafo sia ancora vuoto (topologia reale ancora vuota),
@@ -755,11 +802,11 @@ public class DualAscentTopologyInstance
 		dualCost += minCost;
 		finalCut.put(rootComponent, minCost);
 		for (DatapathId node : rootComponent) {
-			Set<Link> links = completeGraph.getLinks().get(node);
-			if (links == null) {
+			Set<Link> connectedLinks = links.get(node);
+			if (connectedLinks == null) {
 				continue;
 			}
-			for (Link ingressLink : links) {
+			for (Link ingressLink : connectedLinks) {
 				if (node.equals(ingressLink.getDst())) {
 					if (rootComponent.contains(ingressLink.getSrc())) {
 						continue;
@@ -772,11 +819,11 @@ public class DualAscentTopologyInstance
 		}
 	}
 
-	private Link findMinArc(Set<DatapathId> rootComponent, Cluster completeGraph, Cluster auxiliaryGraph)
+	private Link findMinArc(Set<DatapathId> rootComponent, Map<DatapathId, Set<Link>> links, Cluster auxiliaryGraph)
 	{
 		Link minLink = null;
 		for (DatapathId node : rootComponent) {
-			for (Link link : completeGraph.getLinks().get(node)) {
+			for (Link link : links.get(node)) {
 				if (node.equals(link.getDst())) {
 					if (auxiliaryGraph.getLinks().get(node).contains(link))
 						continue;
@@ -790,6 +837,56 @@ public class DualAscentTopologyInstance
 		return minLink;
 	}
 //------------------------------------------------------------------------------
+
+	/*
+	* Modification of the calculateShortestPathTreeInClusters (dealing with whole
+	* topology, not individual clusters)
+	*/
+	public void calculateAllShortestPaths()
+	{
+		this.broadcastNodePorts.clear();
+		this.destinationRootedFullTrees.clear();
+		Map<Link, Integer> linkCost = new HashMap<Link, Integer>();
+		int tunnel_weight = switchPorts.size() + 1;
+
+		for (NodePortTuple npt : tunnelPorts) {
+			if (allLinks.get(npt) == null)
+				continue;
+			for (Link link : allLinks.get(npt)) {
+				if (link == null)
+					continue;
+				linkCost.put(link, tunnel_weight);
+			}
+		}
+
+		Map<DatapathId, Set<Link>> linkDpidMap = new HashMap<DatapathId, Set<Link>>();
+		for (DatapathId s : switches) {
+			if (switchPorts.get(s) == null)
+				continue;
+			for (OFPort p : switchPorts.get(s)) {
+				NodePortTuple np = new NodePortTuple(s, p);
+				if (allLinks.get(np) == null)
+					continue;
+				for (Link l : allLinks.get(np)) {
+					if (linkDpidMap.containsKey(s)) {
+						linkDpidMap.get(s).add(l);
+					} else {
+						linkDpidMap.put(s, new HashSet<Link>(Arrays.asList(l)));
+					}
+				}
+			}
+		}
+
+		for (DatapathId node : linkDpidMap.keySet()) {
+			BroadcastTree tree = dualAscent(linkDpidMap, node, linkCost, true);
+			destinationRootedFullTrees.put(node, tree);
+		}
+
+		// finiteBroadcastTree is randomly chosen in this implementation
+		if (this.destinationRootedFullTrees.size() > 0) {
+			this.finiteBroadcastTree = destinationRootedFullTrees.values().iterator().next();
+		}
+	}
 
 	protected void calculateShortestPathTreeInClusters()
 	{
@@ -811,8 +908,7 @@ public class DualAscentTopologyInstance
 
 		for (Cluster c : clusters) {
 			for (DatapathId node : c.links.keySet()) {
-				BroadcastTree tree;
-				tree = dualAscent(c, node, linkCost, true);
+				BroadcastTree tree = clusterDualAscent(c, node, linkCost, true);
 				destinationRootedTrees.put(node, tree);
 			}
 		}
@@ -827,9 +923,50 @@ public class DualAscentTopologyInstance
 		}
 	}
 
+	protected Set<NodePortTuple> getAllBroadcastNodePorts()
+	{
+		return this.broadcastNodePorts;
+	}
+
+	protected void calculateAllBroadcastNodePorts()
+	{
+		if (this.destinationRootedFullTrees.size() > 0) {
+			this.finiteBroadcastTree = destinationRootedFullTrees.values().iterator().next();
+			Map<DatapathId, Link> links = finiteBroadcastTree.getLinks();
+			if (links == null)
+				return;
+			for (DatapathId nodeId : links.keySet()) {
+				Link l = links.get(nodeId);
+				if (l == null)
+					continue;
+				NodePortTuple npt1 = new NodePortTuple(l.getSrc(), l.getSrcPort());
+				NodePortTuple npt2 = new NodePortTuple(l.getDst(), l.getDstPort());
+				this.broadcastNodePorts.add(npt1);
+				this.broadcastNodePorts.add(npt2);
+			}
+		}
+	}
+
+	protected void calculateBroadcastPortMap()
+	{
+		this.broadcastPortMap.clear();
+
+		for (DatapathId sw : this.switches) {
+			for (OFPort p : this.allPorts.get(sw)) {
+				NodePortTuple npt = new NodePortTuple(sw, p);
+				if (isEdge(sw, p) || broadcastNodePorts.contains(npt)) {
+					if (broadcastPortMap.containsKey(sw)) {
+						broadcastPortMap.get(sw).add(p);
+					} else {
+						broadcastPortMap.put(sw, new HashSet<OFPort>(Arrays.asList(p)));
+					}
+				}
+			}
+		}
+	}
+
 	protected void calculateBroadcastNodePortsInClusters()
 	{
-
 		clusterBroadcastTrees.clear();
 
 		calculateBroadcastTreeInClusters();
@@ -861,21 +998,21 @@ public class DualAscentTopologyInstance
 		NodePortTuple npt;
 		DatapathId srcId = id.getSrc();
 		DatapathId dstId = id.getDst();
+		// set of NodePortTuples on the route
+		LinkedList<NodePortTuple> sPorts = new LinkedList<NodePortTuple>();
 
-		LinkedList<NodePortTuple> switchPorts = new LinkedList<NodePortTuple>();
-
-		if (destinationRootedTrees == null)
+		if (destinationRootedFullTrees == null)
 			return null;
-		if (destinationRootedTrees.get(dstId) == null)
+		if (destinationRootedFullTrees.get(dstId) == null)
 			return null;
 
-		Map<DatapathId, Link> nexthoplinks = destinationRootedTrees.get(dstId).getLinks();
+		Map<DatapathId, Link> nexthoplinks = destinationRootedFullTrees.get(dstId).getLinks();
 
 		if (!switches.contains(srcId) || !switches.contains(dstId)) {
 			// This is a switch that is not connected to any other switch
 			// hence there was no update for links (and hence it is not
 			// in the network)
-			log.debug("buildroute: Standalone switch: {}", srcId);
+			log.info("buildroute: Standalone switch: {}", srcId);
 
 			// The only possible non-null path for this case is
 			// if srcId equals dstId --- and that too is an 'empty' path []
@@ -883,19 +1020,18 @@ public class DualAscentTopologyInstance
 		} else if ((nexthoplinks != null) && (nexthoplinks.get(srcId) != null)) {
 			while (!srcId.equals(dstId)) {
 				Link l = nexthoplinks.get(srcId);
-
 				npt = new NodePortTuple(l.getSrc(), l.getSrcPort());
-				switchPorts.addLast(npt);
+				sPorts.addLast(npt);
 				npt = new NodePortTuple(l.getDst(), l.getDstPort());
-				switchPorts.addLast(npt);
+				sPorts.addLast(npt);
 				srcId = nexthoplinks.get(srcId).getDst();
 			}
 		}
 		// else, no path exists, and path equals null
 
 		Route result = null;
-		if (switchPorts != null && !switchPorts.isEmpty()) {
-			result = new Route(id, switchPorts);
+		if (sPorts != null && !sPorts.isEmpty()) {
+			result = new Route(id, sPorts);
 		}
 		if (log.isTraceEnabled()) {
 			log.trace("buildroute: {}", result);
@@ -903,24 +1039,23 @@ public class DualAscentTopologyInstance
 		return result;
 	}
 
+	/*
+	* Getter Functions
+	*/
+
 	protected int getCost(DatapathId srcId, DatapathId dstId)
 	{
 		BroadcastTree bt = destinationRootedTrees.get(dstId);
 		if (bt == null)
 			return -1;
-		return (bt.getCost(srcId));
+		return bt.getCost(srcId);
 	}
-
-	/*
-	 * Getter Functions
-	 */
 
 	protected Set<Cluster> getClusters()
 	{
 		return clusters;
 	}
 
-	// IRoutingEngineService interfaces
 	protected boolean routeExists(DatapathId srcId, DatapathId dstId)
 	{
 		BroadcastTree bt = destinationRootedTrees.get(dstId);
@@ -932,20 +1067,24 @@ public class DualAscentTopologyInstance
 		return true;
 	}
 
+	/*
+	* Calculates E2E route
+	*/
 	protected Route getRoute(ServiceChain sc, DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort,
 		U64 cookie)
 	{
-
-		// Return null the route source and desitnation are the
-		// same switchports.
-		if (srcId.equals(dstId) && srcPort.equals(dstPort))
+		// Return null if the route source and destination are the
+		// same switch ports.
+		if (srcId.equals(dstId) && srcPort.equals(dstPort)) {
 			return null;
+		}
 
 		List<NodePortTuple> nptList;
 		NodePortTuple npt;
 		Route r = getRoute(srcId, dstId, U64.of(0));
-		if (r == null && !srcId.equals(dstId))
+		if (r == null && !srcId.equals(dstId)) {
 			return null;
+		}
 
 		if (r != null) {
 			nptList = new ArrayList<NodePortTuple>(r.getPath());
@@ -988,6 +1127,7 @@ public class DualAscentTopologyInstance
 
 	protected BroadcastTree getBroadcastTreeForCluster(long clusterId)
 	{
+		@SuppressWarnings("unlikely-arg-type")
 		Cluster c = switchClusterMap.get(clusterId);
 		if (c == null)
 			return null;
@@ -1051,12 +1191,14 @@ public class DualAscentTopologyInstance
 		return true;
 	}
 
+	/*
+	* Takes finiteBroadcastTree into account to prevent loops in the network
+	*/
 	protected boolean isIncomingBroadcastAllowedOnSwitchPort(DatapathId sw, OFPort portId)
 	{
-		if (isInternalToOpenflowDomain(sw, portId)) {
-			DatapathId clusterId = getOpenflowDomainId(sw);
+		if (!isEdge(sw, portId)) {
 			NodePortTuple npt = new NodePortTuple(sw, portId);
-			if (clusterBroadcastNodePorts.get(clusterId).contains(npt))
+			if (broadcastNodePorts.contains(npt))
 				return true;
 			else
 				return false;
@@ -1114,7 +1256,7 @@ public class DualAscentTopologyInstance
 	{
 		Set<OFPort> result = new HashSet<OFPort>();
 		DatapathId clusterId = getOpenflowDomainId(targetSw);
-		for (NodePortTuple npt : clusterBroadcastNodePorts.get(clusterId)) {
+		for (NodePortTuple npt : clusterPorts.get(clusterId)) {
 			if (npt.getNodeId().equals(targetSw)) {
 				result.add(npt.getPortId());
 			}

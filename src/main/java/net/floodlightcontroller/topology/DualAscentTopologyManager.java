@@ -17,6 +17,7 @@
 package net.floodlightcontroller.topology;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -38,8 +39,6 @@ import net.floodlightcontroller.core.IHAListener;
 import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.LogicalOFMessageCategory;
-import net.floodlightcontroller.core.annotations.LogMessageCategory;
-import net.floodlightcontroller.core.annotations.LogMessageDoc;
 import net.floodlightcontroller.core.internal.IOFSwitchService;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -84,7 +83,6 @@ import org.slf4j.LoggerFactory;
  * the network graph, as well as implementing tools for finding routes through
  * the topology.
  */
-@LogMessageCategory("Network Topology")
 public class DualAscentTopologyManager
 	implements IFloodlightModule, ITopologyService, IRoutingService, ILinkDiscoveryListener, IOFMessageListener
 {
@@ -96,33 +94,33 @@ public class DualAscentTopologyManager
 	public static final String CONTEXT_TUNNEL_ENABLED = "com.bigswitch.floodlight.topologymanager.tunnelEnabled";
 
 	/**
-	 * Role of the controller.
-	 */
+	* Role of the controller.
+	*/
 	private HARole role;
 
 	/**
-	 * Set of ports for each switch
-	 */
+	* Set of ports for each switch
+	*/
 	protected Map<DatapathId, Set<OFPort>> switchPorts;
 
 	/**
-	 * Set of links organized by node port tuple
-	 */
+	* Set of links organized by node port tuple
+	*/
 	protected Map<NodePortTuple, Set<Link>> switchPortLinks;
 
 	/**
-	 * Set of direct links
-	 */
+	* Set of direct links
+	*/
 	protected Map<NodePortTuple, Set<Link>> directLinks;
 
 	/**
-	 * set of links that are broadcast domain links.
-	 */
+	* set of links that are broadcast domain links.
+	*/
 	protected Map<NodePortTuple, Set<Link>> portBroadcastDomainLinks;
 
 	/**
-	 * set of tunnel links
-	 */
+	* set of tunnel links
+	*/
 	protected Set<NodePortTuple> tunnelPorts;
 
 	protected ILinkDiscoveryService linkDiscoveryService;
@@ -145,19 +143,19 @@ public class DualAscentTopologyManager
 	private Date lastUpdateTime;
 
 	/**
-	 * Flag that indicates if links (direct/tunnel/multihop links) were updated as
-	 * part of LDUpdate.
-	 */
+	* Flag that indicates if links (direct/tunnel/multihop links) were updated as
+	* part of LDUpdate.
+	*/
 	protected boolean linksUpdated;
 	/**
-	 * Flag that indicates if direct or tunnel links were updated as part of
-	 * LDUpdate.
-	 */
+	* Flag that indicates if direct or tunnel links were updated as part of
+	* LDUpdate.
+	*/
 	protected boolean dtLinksUpdated;
 
 	/**
-	 * Flag that indicates if tunnel ports were updated or not
-	 */
+	* Flag that indicates if tunnel ports were updated or not
+	*/
 	protected boolean tunnelPortsUpdated;
 
 	protected int TOPOLOGY_COMPUTE_INTERVAL_MS = 500;
@@ -165,25 +163,25 @@ public class DualAscentTopologyManager
 	private IHAListener haListener;
 
 	/**
-	 * Debug Counters
-	 */
+	* Debug Counters
+	*/
 	protected static final String PACKAGE = DualAscentTopologyManager.class.getPackage().getName();
 	protected IDebugCounter ctrIncoming;
 
 	/**
-	 * Debug Events
-	 */
+	* Debug Events
+	*/
 	protected IDebugEventService debugEventService;
 
 	/*
-	 * Topology Event Updater
-	 */
+	* Topology Event Updater
+	*/
 	protected IEventCategory<TopologyEvent> eventCategory;
 
 	/**
-	 * Topology Information exposed for a Topology related event - used inside the
-	 * BigTopologyEvent class
-	 */
+	* Topology Information exposed for a Topology related event - used inside the
+	* BigTopologyEvent class
+	*/
 	protected class TopologyEventInfo
 	{
 		private final int numOpenflowClustersWithTunnels;
@@ -235,8 +233,8 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Topology Event class to track topology related events
-	 */
+	* Topology Event class to track topology related events
+	*/
 	protected class TopologyEvent
 	{
 		@EventColumn(name = "Reason", description = EventFieldType.STRING)
@@ -254,47 +252,47 @@ public class DualAscentTopologyManager
 
 	// Getter/Setter methods
 	/**
-	 * Get the time interval for the period topology updates, if any. The time
-	 * returned is in milliseconds.
-	 * 
-	 * @return
-	 */
+	* Get the time interval for the period topology updates, if any. The time
+	* returned is in milliseconds.
+	* 
+	* @return
+	*/
 	public int getTopologyComputeInterval()
 	{
 		return TOPOLOGY_COMPUTE_INTERVAL_MS;
 	}
 
 	/**
-	 * Set the time interval for the period topology updates, if any. The time is in
-	 * milliseconds.
-	 * 
-	 * @return
-	 */
+	* Set the time interval for the period topology updates, if any. The time is in
+	* milliseconds.
+	* 
+	* @return
+	*/
 	public void setTopologyComputeInterval(int time_ms)
 	{
 		TOPOLOGY_COMPUTE_INTERVAL_MS = time_ms;
 	}
 
 	/**
-	 * Thread for recomputing topology. The thread is always running, however the
-	 * function applyUpdates() has a blocking call.
-	 */
-	@LogMessageDoc(level = "ERROR", message = "Error in topology instance task thread", explanation = "An unknown error occured in the topology " +
-		"discovery module.", recommendation = LogMessageDoc.CHECK_CONTROLLER)
+	* Thread for recomputing topology. The thread is always running, however the
+	* function applyUpdates() has a blocking call.
+	*/
 	protected class UpdateTopologyWorker implements Runnable
 	{
 		@Override
 		public void run()
 		{
 			try {
-				if (ldUpdates.peek() != null)
+				if (ldUpdates.peek() != null) {
 					updateTopology();
+				}
 				handleMiscellaneousPeriodicEvents();
 			} catch (Exception e) {
 				log.error("Error in topology instance task thread", e);
 			} finally {
-				if (floodlightProviderService.getRole() != HARole.STANDBY)
+				if (floodlightProviderService.getRole() != HARole.STANDBY) {
 					newInstanceTask.reschedule(TOPOLOGY_COMPUTE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+				}
 			}
 		}
 	}
@@ -321,6 +319,7 @@ public class DualAscentTopologyManager
 	// **********************
 	// ILinkDiscoveryListener
 	// **********************
+
 	@Override
 	public void linkDiscoveryUpdate(List<LDUpdate> updateList)
 	{
@@ -343,9 +342,49 @@ public class DualAscentTopologyManager
 	// ITopologyService
 	// ****************
 
-	//
-	// ITopologyService interface methods
-	//
+	@Override
+	public Map<DatapathId, Set<Link>> getAllLinks()
+	{
+
+		Map<DatapathId, Set<Link>> dpidLinks = new HashMap<DatapathId, Set<Link>>();
+		DualAscentTopologyInstance ti = getCurrentInstance(true);
+		Set<DatapathId> switches = ti.getSwitches();
+
+		for (DatapathId s : switches) {
+			if (this.switchPorts.get(s) == null)
+				continue;
+			for (OFPort p : switchPorts.get(s)) {
+				NodePortTuple np = new NodePortTuple(s, p);
+				if (this.switchPortLinks.get(np) == null)
+					continue;
+				for (Link l : this.switchPortLinks.get(np)) {
+					if (dpidLinks.containsKey(s)) {
+						dpidLinks.get(s).add(l);
+					} else {
+						dpidLinks.put(s, new HashSet<Link>(Arrays.asList(l)));
+					}
+
+				}
+			}
+		}
+
+		return dpidLinks;
+	}
+
+	@Override
+	public boolean isEdge(DatapathId sw, OFPort p)
+	{
+		DualAscentTopologyInstance ti = getCurrentInstance(true);
+		return ti.isEdge(sw, p);
+	}
+
+	@Override
+	public Set<OFPort> getSwitchBroadcastPorts(DatapathId sw)
+	{
+		DualAscentTopologyInstance ti = getCurrentInstance(true);
+		return ti.swBroadcastPorts(sw);
+	}
+
 	@Override
 	public Date getLastUpdateTime()
 	{
@@ -404,19 +443,6 @@ public class DualAscentTopologyManager
 	{
 		DualAscentTopologyInstance ti = getCurrentInstance(tunnelEnabled);
 		return ti.getOpenflowDomainId(switchId);
-	}
-
-	@Override
-	public DatapathId getL2DomainId(DatapathId switchId)
-	{
-		return getL2DomainId(switchId, true);
-	}
-
-	@Override
-	public DatapathId getL2DomainId(DatapathId switchId, boolean tunnelEnabled)
-	{
-		DualAscentTopologyInstance ti = getCurrentInstance(tunnelEnabled);
-		return ti.getL2DomainId(switchId);
 	}
 
 	@Override
@@ -480,10 +506,10 @@ public class DualAscentTopologyManager
 	////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////
 	/**
-	 * Get all the ports on the target switch (targetSw) on which a broadcast packet
-	 * must be sent from a host whose attachment point is on switch port (src,
-	 * srcPort).
-	 */
+	* Get all the ports on the target switch (targetSw) on which a broadcast packet
+	* must be sent from a host whose attachment point is on switch port (src,
+	* srcPort).
+	*/
 	@Override
 	public Set<OFPort> getBroadcastPorts(DatapathId targetSw, DatapathId src, OFPort srcPort)
 	{
@@ -491,10 +517,10 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Get all the ports on the target switch (targetSw) on which a broadcast packet
-	 * must be sent from a host whose attachment point is on switch port (src,
-	 * srcPort).
-	 */
+	* Get all the ports on the target switch (targetSw) on which a broadcast packet
+	* must be sent from a host whose attachment point is on switch port (src,
+	* srcPort).
+	*/
 	@Override
 	public Set<OFPort> getBroadcastPorts(DatapathId targetSw, DatapathId src, OFPort srcPort, boolean tunnelEnabled)
 	{
@@ -539,8 +565,8 @@ public class DualAscentTopologyManager
 	////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////
 	/**
-	 * Checks if the two switchports belong to the same broadcast domain.
-	 */
+	* Checks if the two switchports belong to the same broadcast domain.
+	*/
 	@Override
 	public boolean isInSameBroadcastDomain(DatapathId s1, OFPort p1, DatapathId s2, OFPort p2)
 	{
@@ -560,8 +586,8 @@ public class DualAscentTopologyManager
 	////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////
 	/**
-	 * Checks if the switchport is a broadcast domain port or not.
-	 */
+	* Checks if the switchport is a broadcast domain port or not.
+	*/
 	@Override
 	public boolean isBroadcastDomainPort(DatapathId sw, OFPort port)
 	{
@@ -578,9 +604,9 @@ public class DualAscentTopologyManager
 	////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////
 	/**
-	 * Checks if the new attachment point port is consistent with the old attachment
-	 * point port.
-	 */
+	* Checks if the new attachment point port is consistent with the old attachment
+	* point port.
+	*/
 	@Override
 	public boolean isConsistent(DatapathId oldSw, OFPort oldPort, DatapathId newSw, OFPort newPort)
 	{
@@ -593,24 +619,6 @@ public class DualAscentTopologyManager
 	{
 		DualAscentTopologyInstance ti = getCurrentInstance(tunnelEnabled);
 		return ti.isConsistent(oldSw, oldPort, newSw, newPort);
-	}
-
-	////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////////////////////////////////////////
-	/**
-	 * Checks if the two switches are in the same Layer 2 domain.
-	 */
-	@Override
-	public boolean inSameL2Domain(DatapathId switch1, DatapathId switch2)
-	{
-		return inSameL2Domain(switch1, switch2, true);
-	}
-
-	@Override
-	public boolean inSameL2Domain(DatapathId switch1, DatapathId switch2, boolean tunnelEnabled)
-	{
-		DualAscentTopologyInstance ti = getCurrentInstance(tunnelEnabled);
-		return ti.inSameL2Domain(switch1, switch2);
 	}
 
 	////////////////////////////////////////////////////////////////////////
@@ -915,8 +923,9 @@ public class DualAscentTopologyManager
 		ScheduledExecutorService ses = threadPoolService.getScheduledExecutor();
 		newInstanceTask = new SingletonTask(ses, new UpdateTopologyWorker());
 
-		if (role != HARole.STANDBY)
+		if (role != HARole.STANDBY) {
 			newInstanceTask.reschedule(TOPOLOGY_COMPUTE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+		}
 
 		linkDiscoveryService.addListener(this);
 		floodlightProviderService.addOFMessageListener(OFType.PACKET_IN, this);
@@ -944,15 +953,15 @@ public class DualAscentTopologyManager
 	// Internal methods
 	// ****************
 	/**
-	 * If the packet-in switch port is disabled for all data traffic, then the
-	 * packet will be dropped. Otherwise, the packet will follow the normal
-	 * processing chain.
-	 * 
-	 * @param sw
-	 * @param pi
-	 * @param cntx
-	 * @return
-	 */
+	* If the packet-in switch port is disabled for all data traffic, then the
+	* packet will be dropped. Otherwise, the packet will follow the normal
+	* processing chain.
+	* 
+	* @param sw
+	* @param pi
+	* @param cntx
+	* @return
+	*/
 	protected Command dropFilter(DatapathId sw, OFPacketIn pi, FloodlightContext cntx)
 	{
 		Command result = Command.CONTINUE;
@@ -972,16 +981,14 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * TODO This method must be moved to a layer below forwarding so that anyone can
-	 * use it.
-	 * 
-	 * @param packetData
-	 * @param sw
-	 * @param ports
-	 * @param cntx
-	 */
-	@LogMessageDoc(level = "ERROR", message = "Failed to clear all flows on switch {switch}", explanation = "An I/O error occured while trying send " +
-		"topology discovery packet", recommendation = LogMessageDoc.CHECK_SWITCH)
+	* TODO This method must be moved to a layer below forwarding so that anyone can
+	* use it.
+	* 
+	* @param packetData
+	* @param sw
+	* @param ports
+	* @param cntx
+	*/
 	public void doMultiActionPacketOut(byte[] packetData, IOFSwitch sw, Set<OFPort> ports, FloodlightContext cntx)
 	{
 
@@ -1027,12 +1034,12 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Get the set of ports to eliminate for sending out BDDP. The method returns
-	 * all the ports that are suppressed for link discovery on the switch. packets.
-	 * 
-	 * @param sid
-	 * @return
-	 */
+	* Get the set of ports to eliminate for sending out BDDP. The method returns
+	* all the ports that are suppressed for link discovery on the switch. packets.
+	* 
+	* @param sid
+	* @return
+	*/
 	protected Set<OFPort> getPortsToEliminateForBDDP(DatapathId sid)
 	{
 		Set<NodePortTuple> suppressedNptList = linkDiscoveryService.getSuppressLLDPsInfo();
@@ -1050,14 +1057,14 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * The BDDP packets are forwarded out of all the ports out of an openflowdomain.
-	 * Get all the switches in the same openflow domain as the sw (disabling
-	 * tunnels). Then get all the external switch ports and send these packets out.
-	 * 
-	 * @param sw
-	 * @param pi
-	 * @param cntx
-	 */
+	* The BDDP packets are forwarded out of all the ports out of an openflowdomain.
+	* Get all the switches in the same openflow domain as the sw (disabling
+	* tunnels). Then get all the external switch ports and send these packets out.
+	* 
+	* @param sw
+	* @param pi
+	* @param cntx
+	*/
 	protected void doFloodBDDP(DatapathId pinSwitch, OFPacketIn pi, FloodlightContext cntx)
 	{
 
@@ -1138,12 +1145,11 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Updates concerning switch disconnect and port down are not processed.
-	 * LinkDiscoveryManager is expected to process those messages and send multiple
-	 * link removed messages. However, all the updates from LinkDiscoveryManager
-	 * would be propagated to the listeners of topology.
-	 */
-	@LogMessageDoc(level = "ERROR", message = "Error reading link discovery update.", explanation = "Unable to process link discovery update", recommendation = LogMessageDoc.REPORT_CONTROLLER_BUG)
+	* Updates concerning switch disconnect and port down are not processed.
+	* LinkDiscoveryManager is expected to process those messages and send multiple
+	* link removed messages. However, all the updates from LinkDiscoveryManager
+	* would be propagated to the listeners of topology.
+	*/
 	public List<LDUpdate> applyUpdates()
 	{
 		List<LDUpdate> appliedUpdates = new ArrayList<LDUpdate>();
@@ -1154,14 +1160,14 @@ public class DualAscentTopologyManager
 			} catch (Exception e) {
 				log.error("Error reading link discovery update.", e);
 			}
-			if (log.isTraceEnabled()) {
-				log.trace("Applying update: {}", update);
+			if (log.isDebugEnabled()) {
+				log.debug("Applying update: {}", update);
 			}
 
 			switch (update.getOperation()) {
 			case LINK_UPDATED:
 				addOrUpdateLink(update.getSrc(), update.getSrcPort(), update.getDst(),
-					update.getDstPort(), update.getType());
+					update.getDstPort(), update.getLatency(), update.getType());
 				break;
 			case LINK_REMOVED:
 				removeLink(update.getSrc(), update.getSrcPort(), update.getDst(), update.getDstPort());
@@ -1190,7 +1196,11 @@ public class DualAscentTopologyManager
 
 	protected void addOrUpdateSwitch(DatapathId sw)
 	{
-		// nothing to do here for the time being.
+		/*
+		* TODO react appropriately addSwitch(sw); for (OFPortDesc p :
+		* switchService.getSwitch(sw).getPorts()) { addPortToSwitch(sw, p.getPortNo());
+		* }
+		*/
 		return;
 	}
 
@@ -1214,10 +1224,10 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * This function computes a new topology instance. It ignores links connected to
-	 * all broadcast domain ports and tunnel ports. The method returns if a new
-	 * instance of topology was created or not.
-	 */
+	* This function computes a new topology instance. It ignores links connected to
+	* all broadcast domain ports and tunnel ports. The method returns if a new
+	* instance of topology was created or not.
+	*/
 	protected boolean createNewInstance(String reason)
 	{
 		Set<NodePortTuple> blockedPorts = new HashSet<NodePortTuple>();
@@ -1260,10 +1270,19 @@ public class DualAscentTopologyManager
 				removeLinkFromStructure(openflowLinks, link);
 			}
 		}
+		// switchPorts contains only ports that are part of links. Calculation of
+		// broadcast ports needs set of all ports.
+		Map<DatapathId, Set<OFPort>> allPorts = new HashMap<DatapathId, Set<OFPort>>();
+		;
+		for (DatapathId sw : switchPorts.keySet()) {
+			allPorts.put(sw, this.getPorts(sw));
+		}
 
-		DualAscentTopologyInstance nt = new DualAscentTopologyInstance(switchPorts, blockedPorts, openflowLinks, broadcastDomainPorts,
-			tunnelPorts);
+		DualAscentTopologyInstance nt = new DualAscentTopologyInstance(switchPorts, blockedPorts, openflowLinks,
+			broadcastDomainPorts, tunnelPorts, switchPortLinks, allPorts);
+
 		nt.compute();
+
 		// We set the instances with and without tunnels to be identical.
 		// If needed, we may compute them differently.
 		currentInstance = nt;
@@ -1272,14 +1291,15 @@ public class DualAscentTopologyManager
 		TopologyEventInfo topologyInfo = new TopologyEventInfo(0, nt.getClusters().size(),
 			new HashMap<DatapathId, List<NodePortTuple>>(), 0);
 		eventCategory.newEventWithFlush(new TopologyEvent(reason, topologyInfo));
+
 		return true;
 	}
 
 	/**
-	 * We expect every switch port to have at most two links. Both these links must
-	 * be unidirectional links connecting to the same switch port. If not, we will
-	 * mark this as a broadcast domain port.
-	 */
+	* We expect every switch port to have at most two links. Both these links must
+	* be unidirectional links connecting to the same switch port. If not, we will
+	* mark this as a broadcast domain port.
+	*/
 	protected Set<NodePortTuple> identifyBroadcastDomainPorts()
 	{
 
@@ -1384,16 +1404,13 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Add the given link to the data structure. Returns true if a link was added.
-	 * 
-	 * @param s
-	 * @param l
-	 * @return
-	 */
-	private boolean addLinkToStructure(Map<NodePortTuple, Set<Link>> s, Link l)
+	* Add the given link to the data structure.
+	* 
+	* @param s
+	* @param l
+	*/
+	private void addLinkToStructure(Map<NodePortTuple, Set<Link>> s, Link l)
 	{
-		boolean result1 = false, result2 = false;
-
 		NodePortTuple n1 = new NodePortTuple(l.getSrc(), l.getSrcPort());
 		NodePortTuple n2 = new NodePortTuple(l.getDst(), l.getDstPort());
 
@@ -1403,20 +1420,25 @@ public class DualAscentTopologyManager
 		if (s.get(n2) == null) {
 			s.put(n2, new HashSet<Link>());
 		}
-		result1 = s.get(n1).add(l);
-		result2 = s.get(n2).add(l);
-
-		return (result1 || result2);
+		/*
+		* Since we don't include latency in .equals(), we need to explicitly remove the
+		* existing link (if present). Otherwise, new latency values for existing links
+		* will never be accepted.
+		*/
+		s.get(n1).remove(l);
+		s.get(n2).remove(l);
+		s.get(n1).add(l);
+		s.get(n2).add(l);
 	}
 
 	/**
-	 * Delete the given link from the data strucure. Returns true if the link was
-	 * deleted.
-	 * 
-	 * @param s
-	 * @param l
-	 * @return
-	 */
+	* Delete the given link from the data structure. Returns true if the link was
+	* deleted.
+	* 
+	* @param s
+	* @param l
+	* @return
+	*/
 	private boolean removeLinkFromStructure(Map<NodePortTuple, Set<Link>> s, Link l)
 	{
 
@@ -1437,14 +1459,16 @@ public class DualAscentTopologyManager
 		return result1 || result2;
 	}
 
-	protected void addOrUpdateTunnelLink(DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort)
+	protected void addOrUpdateTunnelLink(DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort,
+		U64 latency)
 	{
 		// If you need to handle tunnel links, this is a placeholder.
 	}
 
-	public void addOrUpdateLink(DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort, LinkType type)
+	public void addOrUpdateLink(DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort, U64 latency,
+		LinkType type)
 	{
-		Link link = new Link(srcId, srcPort, dstId, dstPort);
+		Link link = new Link(srcId, srcPort, dstId, dstPort, latency);
 
 		if (type.equals(LinkType.MULTIHOP_LINK)) {
 			addPortToSwitch(srcId, srcPort);
@@ -1464,7 +1488,7 @@ public class DualAscentTopologyManager
 			dtLinksUpdated = true;
 			linksUpdated = true;
 		} else if (type.equals(LinkType.TUNNEL)) {
-			addOrUpdateTunnelLink(srcId, srcPort, dstId, dstPort);
+			addOrUpdateTunnelLink(srcId, srcPort, dstId, dstPort, latency);
 		}
 	}
 
@@ -1499,7 +1523,8 @@ public class DualAscentTopologyManager
 
 	public void removeLink(DatapathId srcId, OFPort srcPort, DatapathId dstId, OFPort dstPort)
 	{
-		Link link = new Link(srcId, srcPort, dstId, dstPort);
+		Link link = new Link(srcId, srcPort, dstId, dstPort,
+			U64.ZERO /* does not matter for remove (not included in .equals() of Link) */);
 		removeLink(link);
 	}
 
@@ -1513,8 +1538,8 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Clears the current topology. Note that this does NOT send out updates.
-	 */
+	* Clears the current topology. Note that this does NOT send out updates.
+	*/
 	public void clearCurrentTopology()
 	{
 		this.clear();
@@ -1526,8 +1551,8 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Getters. No Setters.
-	 */
+	* Getters. No Setters.
+	*/
 	public Map<DatapathId, Set<OFPort>> getSwitchPorts()
 	{
 		return switchPorts;
@@ -1557,8 +1582,8 @@ public class DualAscentTopologyManager
 	}
 
 	/**
-	 * Switch methods
-	 */
+	* Switch methods
+	*/
 	@Override
 	public Set<OFPort> getPorts(DatapathId sw)
 	{
