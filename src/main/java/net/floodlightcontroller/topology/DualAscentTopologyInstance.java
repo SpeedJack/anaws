@@ -647,7 +647,7 @@ public class DualAscentTopologyInstance
 			}
 		}
 
-		BroadcastTree tree = costrusciBroadcastTree(root, linkCost, finalCluster);
+		BroadcastTree tree = costrusciBroadcastTree(root, linkCost, finalCluster, isDstRooted);
 
 		Integer cost = 0;
 		if (tree.getLinks().values() != null) { 
@@ -664,7 +664,7 @@ public class DualAscentTopologyInstance
 	}
 
 	private BroadcastTree costrusciBroadcastTree(DatapathId root, Map<Link, Integer> linkCost,
-		Cluster auxiliaryGraph)
+		Cluster auxiliaryGraph, boolean isDstRooted)
 	{
 		/*
 		 * DatapathId root Map<Link, Integer> linkCost Cluster auxiliaryGraph
@@ -705,7 +705,7 @@ public class DualAscentTopologyInstance
 				for (Link link : auxiliaryGraph.getLinks().get(node)) {
 					DatapathId neighbor;
 
-					neighbor = link.getDst();
+					neighbor = (isDstRooted ? link.getSrc() : link.getDst());
 
 					// links directed toward node will result in this condition
 					if (neighbor.equals(node))
