@@ -8,5 +8,5 @@
 # usare sudo docker images per vedere la lista di immagini
 # usare sudo docker rmi <id-image> per rimuovere una immagine
 sudo docker rmi floodlight_image
-sudo docker build -t floodlight_image ../
+sudo docker build -t floodlight_image .
 sudo docker run -it -p 6653:6653 -p 1044:1044 --name floodlight floodlight_image

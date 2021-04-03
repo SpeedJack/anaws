@@ -17,6 +17,7 @@
 package net.floodlightcontroller.topology;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,6 +92,7 @@ public class DualAscentTopologyInstance
 	private Map<Link, Integer> reducedCost = new HashMap<>(); // S
 	private Map<Set<DatapathId>, Integer> finalCut = new HashMap<>(); // cut set dei root component
 	private Integer dualCost;
+	private HashMap<DatapathId, HashMap<DatapathId, Boolean>> connections;
 	private Comparator<Link> comparatorLinks = new Comparator<Link>() {
 		@Override
 		public int compare(Link linkLeft, Link linkRight)
@@ -538,17 +540,9 @@ public class DualAscentTopologyInstance
 	}
 
 //------------------------------------------------------------------------------
-	private boolean areConnected(Cluster c, DatapathId node1, DatapathId node2)
+	private boolean areConnected(DatapathId node1, DatapathId node2)
 	{
-		for (Entry<DatapathId, Set<Link>> setLinksPerNode : c.getLinks().entrySet()) {
-			if (!node1.equals(setLinksPerNode.getKey()))
-				continue;
-			for (Link link : setLinksPerNode.getValue()) {
-				if (node1.equals(link.getSrc()) && node2.equals(link.getDst()))
-					return true;
-			}
-		}
-		return false;
+		return connections.get(node1).get(node2);
 	}
 
 	private HashSet<DatapathId> findRootComp(DatapathId root, Cluster completeGraph, Cluster auxiliaryGraph)
@@ -560,14 +554,14 @@ public class DualAscentTopologyInstance
 			rootComponent.clear();
 			if (node.equals(root)) // tutti target tranne root
 				continue;
-			if (areConnected(auxiliaryGraph, root, node))
+			if (areConnected(root, node))
 				continue;
 			rootComponent.add(node);
 			for (DatapathId otherNode : completeGraph.getNodes()) {
 				if (otherNode.equals(root) || otherNode.equals(node))
 					continue;
-				boolean con21 = areConnected(auxiliaryGraph, otherNode, node);
-				boolean con12 = areConnected(auxiliaryGraph, node, otherNode);
+				boolean con21 = areConnected(otherNode, node);
+				boolean con12 = areConnected(node, otherNode);
 				if (con21 && !con12)
 					continue externCycle;
 				else if (!con21)
@@ -577,7 +571,7 @@ public class DualAscentTopologyInstance
 			for (DatapathId auxiliaryNode : auxiliaryGraph.getNodes()) {
 				if (auxiliaryNode.equals(root) || rootComponent.contains(auxiliaryNode))
 					continue;
-				if (areConnected(auxiliaryGraph, auxiliaryNode, node))
+				if (areConnected(auxiliaryNode, node))
 					rootComponent.add(auxiliaryNode);
 			}
 
@@ -600,6 +594,8 @@ public class DualAscentTopologyInstance
 		Map<DatapathId, Integer> V_i_k = new HashMap<>();
 		Map<Link, Integer> W_i_j_k = new HashMap<>();
 		Cluster auxiliaryGraph = new Cluster();
+		Integer nNodes = completeGraph.getNodes().size();
+		connections = new HashMap<>();			
 
 		// inizializzazione
 		if (linkCost == null) {
@@ -609,6 +605,10 @@ public class DualAscentTopologyInstance
 		finalCut.clear();
 		dualCost = 0;
 		for (DatapathId node : completeGraph.getNodes()) {
+			connections.put(node, new HashMap<DatapathId, Boolean>());
+			for (DatapathId internalNode: completeGraph.getNodes()) {
+				connections.get(node).put(internalNode, (node.equals(internalNode)));
+			}
 			V_i_k.put(node, 0);
 			for (Link link : completeGraph.getLinks().get(node)) {
 				W_i_j_k.put(link, 0);
@@ -632,7 +632,7 @@ public class DualAscentTopologyInstance
 		// visto che floodlight vuole un broadcast tree alla fine,
 		HashSet<DatapathId> toRemove = new HashSet<DatapathId>();
 		for (DatapathId node : auxiliaryGraph.getNodes()) {
-			if (!areConnected(auxiliaryGraph, root, node))
+			if (!areConnected(root, node))
 				toRemove.add(node);
 		}
 		Cluster finalCluster = new Cluster();
@@ -744,6 +744,14 @@ public class DualAscentTopologyInstance
 		 */
 		if (minLink != null) {
 			auxiliaryGraph.addLink(minLink);
+			for (DatapathId node1: auxiliaryGraph.getNodes()) {
+				for (DatapathId node2: auxiliaryGraph.getNodes()) {
+					if (areConnected(node1, minLink.getSrc()) &&
+							areConnected(minLink.getDst(), node2)) {
+						connections.get(node1).put(node2, true);
+					}
+				}
+			}
 		}
 	}
 

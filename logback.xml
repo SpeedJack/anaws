@@ -9,7 +9,7 @@
   </root>
   <logger name="org" level="DEBUG"/>
   <logger name="LogService" level="DEBUG"/> <!-- Restlet access logging -->
-  <logger name="net.floodlightcontroller" level="DEBUG"/>
-  <logger name="net.floodlightcontroller.logging" level="DEBUG"/>
+  <logger name="net.floodlightcontroller" level="INFO"/>
+  <logger name="net.floodlightcontroller.logging" level="INFO"/>
   <logger name="org.sdnplatform" level="INFO"/>
 </configuration>

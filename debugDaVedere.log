@@ -1,0 +1,12 @@
+2021-04-03 12:07:48.233 INFO  [n.f.t.DualAscentTopologyInstance] Auxiliary Graph: [Cluster id=00:00:00:00:00:00:00:01, [00:00:00:00:00:00:00:01, 00:00:00:00:00:00:00:02, 00:00:00:00:00:00:00:0b, 00:00:00:00:00:00:00:0c, 00:00:00:00:00:00:00:0d, 00:00:00:00:00:00:00:0e]]
+2021-04-03 12:07:48.233 INFO  [n.f.t.DualAscentTopologyInstance] Links: {00:00:00:00:00:00:00:01=[Link [src=00:00:00:00:00:00:00:0e outPort=1, dst=00:00:00:00:00:00:00:01, inPort=4], Link [src=00:00:00:00:00:00:00:01 outPort=1, dst=00:00:00:00:00:00:00:0b, inPort=1]], 00:00:00:00:00:00:00:02=[Link [src=00:00:00:00:00:00:00:02 outPort=3, dst=00:00:00:00:00:00:00:0d, inPort=2], Link [src=00:00:00:00:00:00:00:0d outPort=2, dst=00:00:00:00:00:00:00:02, inPort=3], Link [src=00:00:00:00:00:00:00:02 outPort=2, dst=00:00:00:00:00:00:00:0c, inPort=2], Link [src=00:00:00:00:00:00:00:0e outPort=2, dst=00:00:00:00:00:00:00:02, inPort=4]], 00:00:00:00:00:00:00:0b=[Link [src=00:00:00:00:00:00:00:01 outPort=1, dst=00:00:00:00:00:00:00:0b, inPort=1]], 00:00:00:00:00:00:00:0c=[Link [src=00:00:00:00:00:00:00:02 outPort=2, dst=00:00:00:00:00:00:00:0c, inPort=2]], 00:00:00:00:00:00:00:0d=[Link [src=00:00:00:00:00:00:00:02 outPort=3, dst=00:00:00:00:00:00:00:0d, inPort=2], Link [src=00:00:00:00:00:00:00:0d outPort=2, dst=00:00:00:00:00:00:00:02, inPort=3]], 00:00:00:00:00:00:00:0e=[Link [src=00:00:00:00:00:00:00:0e outPort=1, dst=00:00:00:00:00:00:00:01, inPort=4], Link [src=00:00:00:00:00:00:00:0e outPort=2, dst=00:00:00:00:00:00:00:02, inPort=4]]}
+2021-04-03 12:07:48.234 INFO  [n.f.t.DualAscentTopologyInstance] Nodo: 00:00:00:00:00:00:00:0e
+2021-04-03 12:07:48.234 INFO  [n.f.t.DualAscentTopologyInstance] SetLinks: [Link [src=00:00:00:00:00:00:00:0e outPort=1, dst=00:00:00:00:00:00:00:01, inPort=4], Link [src=00:00:00:00:00:00:00:0e outPort=2, dst=00:00:00:00:00:00:00:02, inPort=4]]
+2021-04-03 12:07:48.234 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.234 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.234 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.235 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.235 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.235 INFO  [n.f.t.DualAscentTopologyInstance] TROVATO LINK A NULL
+2021-04-03 12:07:48.235 INFO  [n.f.t.DualAscentTopologyInstance] Costo dualCost del dualAscent: 0
+

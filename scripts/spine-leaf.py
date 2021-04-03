@@ -31,7 +31,7 @@ class Tower( Topo ):
             for spine in spines:
                 self.addLink(leaf, spine)
 
-            for j in range(5):
+            for j in range(1):
                 host = self.addHost( 'h%d%d' % (sn, j + 1) )
                 self.addLink( host, leaf )
 
