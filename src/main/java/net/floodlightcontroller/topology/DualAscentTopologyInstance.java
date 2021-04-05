@@ -550,6 +550,9 @@ public class DualAscentTopologyInstance
 		HashSet<DatapathId> rootComponent = new HashSet<>();
 
 		// Find node for which neither root nor any other node dangles from.
+		// Note: since each node is a target node (except root of course),
+		// here we check for every node in the complete graph, but it should
+		// be only on the target nodes
 		externCycle: for (DatapathId node : completeGraph.getNodes()) {
 			rootComponent.clear();
 			if (node.equals(root)) // tutti target tranne root
@@ -557,6 +560,7 @@ public class DualAscentTopologyInstance
 			if (areConnected(root, node))
 				continue;
 			rootComponent.add(node);
+			// Same reasoning as above is applied here
 			for (DatapathId otherNode : completeGraph.getNodes()) {
 				if (otherNode.equals(root) || otherNode.equals(node))
 					continue;
@@ -625,7 +629,7 @@ public class DualAscentTopologyInstance
 		while (rootComponent != null) {
 			Link minLink = findMinArc(rootComponent, completeGraph, auxiliaryGraph);
 			editCosts(rootComponent, minLink, completeGraph, auxiliaryGraph);
-			addArc(minLink, auxiliaryGraph);
+			addArc(minLink, auxiliaryGraph, completeGraph);
 			rootComponent = findRootComp(root, completeGraph, auxiliaryGraph);
 		}
 
@@ -735,7 +739,7 @@ public class DualAscentTopologyInstance
 		return broadcastTree;
 	}
 
-	private void addArc(Link minLink, Cluster auxiliaryGraph)
+	private void addArc(Link minLink, Cluster auxiliaryGraph, Cluster completeGraph)
 	{
 		/*
 		 * Map<DatapathId, Set<Link>> links = auxiliaryGraph.getLinks();
@@ -744,6 +748,20 @@ public class DualAscentTopologyInstance
 		 */
 		if (minLink != null) {
 			auxiliaryGraph.addLink(minLink);
+			// voglio provare ad aggiungere anche il link nell'altro verso
+			// perche' in una vera rete, ogni link e' bidirezionale
+			// mentre su floodlight un link e' monodirezionale
+			// Secondo il dual ascent il focus sta sulla destinazione
+			// quindi qui aggiungo da dst a src
+			DatapathId nodoSrc = minLink.getSrc();
+			DatapathId nodoDst = minLink.getDst();
+			for (Link link: completeGraph.getLinks().get(nodoSrc)) {
+				if (nodoDst.equals(link.getSrc()) && nodoSrc.equals(link.getDst())) {
+					auxiliaryGraph.addLink(link);
+					break;
+				}
+			}
+			// fine prova
 			for (DatapathId node1: auxiliaryGraph.getNodes()) {
 				for (DatapathId node2: auxiliaryGraph.getNodes()) {
 					if (areConnected(node1, minLink.getSrc()) &&
