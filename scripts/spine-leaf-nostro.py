@@ -17,9 +17,9 @@ class Tower( Topo ):
         switches = []
         for i in range(20):
             sn = i + 1
-            switch = self.addSwitch( 's1%d' % sn )
+            switch = self.addSwitch( 's%d' % sn )
             switches.append(switch)
-            host = self.addHost( 'h%d%d' % (sn, sn) )
+            host = self.addHost( 'h%d' % sn )
             self.addLink(host, switch)
         links = {		
             1 : [
