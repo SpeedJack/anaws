@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     x11-xserver-utils \
     xterm \
+    sudo \
  && rm -rf /var/lib/apt/lists/* \
  && chmod +x /ENTRYPOINT.sh
 

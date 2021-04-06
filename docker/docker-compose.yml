@@ -25,8 +25,7 @@ services:
       - floodlight
     privileged: true
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /lib/modules:/lib/modules
+      - ../scripts/:/root/scripts/
     environment:
       DISPLAY:
 
