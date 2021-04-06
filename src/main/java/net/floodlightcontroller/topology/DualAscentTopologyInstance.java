@@ -17,7 +17,6 @@
 package net.floodlightcontroller.topology;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -435,7 +434,7 @@ public class DualAscentTopologyInstance
 
 	/**
 	 * Returns true if a link has either one of its switch ports blocked.
-	 * 
+	 *
 	 * @param l
 	 * @return
 	 */
@@ -589,36 +588,33 @@ public class DualAscentTopologyInstance
 		boolean isDstRooted)
 	{
 		/*
-		 * 
+		 *
 		 * isDstRooted e' INUTILE, i collegamenti sono bidirezionali (da A a B il
 		 * percorso piu' breve e' anche da B ad A) c Cluster contiene id (DataPathId),
 		 * ID piu' basso tra i nodi del cluster links, Map<DataPathId, set<link>>
-		 * 
+		 *
 		 */
 		Map<DatapathId, Integer> V_i_k = new HashMap<>();
 		Map<Link, Integer> W_i_j_k = new HashMap<>();
 		Cluster auxiliaryGraph = new Cluster();
-		Integer nNodes = completeGraph.getNodes().size();
-		connections = new HashMap<>();			
+		connections = new HashMap<>();
 
 		// inizializzazione
-		if (linkCost == null) {
+		if (linkCost == null)
 			linkCost = new HashMap<>();
-		}
 		reducedCost.clear();
 		finalCut.clear();
 		dualCost = 0;
 		for (DatapathId node : completeGraph.getNodes()) {
 			connections.put(node, new HashMap<DatapathId, Boolean>());
-			for (DatapathId internalNode: completeGraph.getNodes()) {
+			for (DatapathId internalNode : completeGraph.getNodes()) {
 				connections.get(node).put(internalNode, (node.equals(internalNode)));
 			}
 			V_i_k.put(node, 0);
 			for (Link link : completeGraph.getLinks().get(node)) {
 				W_i_j_k.put(link, 0);
-				if (linkCost.get(link) == null) {
+				if (linkCost.get(link) == null)
 					linkCost.put(link, 1);
-				}
 				reducedCost.put(link, linkCost.get(link));
 			}
 			auxiliaryGraph.add(node);
@@ -635,10 +631,9 @@ public class DualAscentTopologyInstance
 
 		// visto che floodlight vuole un broadcast tree alla fine,
 		HashSet<DatapathId> toRemove = new HashSet<DatapathId>();
-		for (DatapathId node : auxiliaryGraph.getNodes()) {
+		for (DatapathId node: auxiliaryGraph.getNodes())
 			if (!areConnected(root, node))
 				toRemove.add(node);
-		}
 		Cluster finalCluster = new Cluster();
 		for (Entry<DatapathId, Set<Link>> node : auxiliaryGraph.getLinks().entrySet()) {
 			if (toRemove.contains(node.getKey()))
@@ -646,22 +641,20 @@ public class DualAscentTopologyInstance
 
 			// addLink automaticamente aggiunge anche il node
 			// finalCluster.add(node);
-			for (Link link : node.getValue()) {
+			for (Link link: node.getValue())
 				finalCluster.addLink(link);
-			}
 		}
 
 		BroadcastTree tree = costrusciBroadcastTree(root, linkCost, finalCluster, isDstRooted);
 
 		Integer cost = 0;
-		if (tree.getLinks().values() != null) { 
-	        for (Link link : tree.getLinks().values()) {
-	        	if (link != null)	        		
-	        		cost += linkCost.get(link);
-	        	else 
-	        		log.info("TROVATO LINK A NULL");
-	        }
-        }
+		if (tree.getLinks().values() != null)
+			for (Link link : tree.getLinks().values()) {
+				if (link != null)
+					cost += linkCost.get(link);
+				else
+					log.info("TROVATO LINK A NULL");
+			}
 		log.info("Costo dualCost del dualAscent: {}", cost.toString());
 		return tree;
 
@@ -689,7 +682,7 @@ public class DualAscentTopologyInstance
 
 		nodeq.add(new NodeDist(root, 0));
 		costsNodesGrafoA.put(root, 0);
-		if (auxiliaryGraph.getLinks() != null) {
+		if (auxiliaryGraph.getLinks() != null)
 			while (nodeq.peek() != null) {
 				NodeDist n = nodeq.poll();
 				DatapathId node = n.getNode();
@@ -702,9 +695,8 @@ public class DualAscentTopologyInstance
 
 				log.info("Links: {}", auxiliaryGraph.getLinks().toString());
 				log.info("Nodo: {}", node.toString());
-				if (auxiliaryGraph.getLinks().get(node) == null) {
+				if (auxiliaryGraph.getLinks().get(node) == null)
 					continue;
-				}
 				log.info("SetLinks: {}", auxiliaryGraph.getLinks().get(node).toString());
 				for (Link link : auxiliaryGraph.getLinks().get(node)) {
 					DatapathId neighbor;
@@ -734,7 +726,6 @@ public class DualAscentTopologyInstance
 					}
 				}
 			}
-		}
 		BroadcastTree broadcastTree = new BroadcastTree(linksGrafoA, costsNodesGrafoA);
 		return broadcastTree;
 	}
@@ -755,21 +746,17 @@ public class DualAscentTopologyInstance
 			// quindi qui aggiungo da dst a src
 			DatapathId nodoSrc = minLink.getSrc();
 			DatapathId nodoDst = minLink.getDst();
-			for (Link link: completeGraph.getLinks().get(nodoSrc)) {
+			for (Link link : completeGraph.getLinks().get(nodoSrc))
 				if (nodoDst.equals(link.getSrc()) && nodoSrc.equals(link.getDst())) {
 					auxiliaryGraph.addLink(link);
 					break;
 				}
-			}
 			// fine prova
-			for (DatapathId node1: auxiliaryGraph.getNodes()) {
-				for (DatapathId node2: auxiliaryGraph.getNodes()) {
+			for (DatapathId node1 : auxiliaryGraph.getNodes())
+				for (DatapathId node2 : auxiliaryGraph.getNodes())
 					if (areConnected(node1, minLink.getSrc()) &&
-							areConnected(minLink.getDst(), node2)) {
+						areConnected(minLink.getDst(), node2))
 						connections.get(node1).put(node2, true);
-					}
-				}
-			}
 		}
 	}
 
@@ -779,21 +766,18 @@ public class DualAscentTopologyInstance
 		// E' possibile che il grafo sia ancora vuoto (topologia reale ancora vuota),
 		// quindi nella reducedCost non c'e' il link
 		Integer minCost = reducedCost.get(minLink);
-		if (minCost == null) {
+		if (minCost == null)
 			return;
-		}
 		dualCost += minCost;
 		finalCut.put(rootComponent, minCost);
 		for (DatapathId node : rootComponent) {
 			Set<Link> links = completeGraph.getLinks().get(node);
-			if (links == null) {
+			if (links == null)
 				continue;
-			}
 			for (Link ingressLink : links) {
 				if (node.equals(ingressLink.getDst())) {
-					if (rootComponent.contains(ingressLink.getSrc())) {
+					if (rootComponent.contains(ingressLink.getSrc()))
 						continue;
-					}
 					Integer cost = reducedCost.get(ingressLink);
 					reducedCost.put(ingressLink, cost - minCost);
 				}
@@ -805,7 +789,7 @@ public class DualAscentTopologyInstance
 	private Link findMinArc(Set<DatapathId> rootComponent, Cluster completeGraph, Cluster auxiliaryGraph)
 	{
 		Link minLink = null;
-		for (DatapathId node : rootComponent) {
+		for (DatapathId node : rootComponent)
 			for (Link link : completeGraph.getLinks().get(node)) {
 				if (node.equals(link.getDst())) {
 					if (auxiliaryGraph.getLinks().get(node).contains(link))
@@ -816,7 +800,6 @@ public class DualAscentTopologyInstance
 						minLink = link;
 				}
 			}
-		}
 		return minLink;
 	}
 //------------------------------------------------------------------------------
@@ -1018,6 +1001,7 @@ public class DualAscentTopologyInstance
 
 	protected BroadcastTree getBroadcastTreeForCluster(long clusterId)
 	{
+		@SuppressWarnings("unlikely-arg-type")
 		Cluster c = switchClusterMap.get(clusterId);
 		if (c == null)
 			return null;
