@@ -1,3 +1,5 @@
+version: "3.4"
+
 services:
   floodlight:
     build: ./fl/
@@ -6,19 +8,11 @@ services:
       - flmnnet
     volumes:
       - ../:/usr/src/myapp/
-    ports:
-      - "6654:6653"
-      - "1044:1044"
-      - "8080:8080"
   mininet:
     build: ./mn/
     container_name: mn
     networks:
       - flmnnet
-    ports:
-      - "6653:6653"
-      - "6633:6633"
-      - "6640:6640"
     links:
       - "floodlight"
     depends_on:
