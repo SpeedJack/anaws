@@ -8,6 +8,7 @@ services:
       - flmnnet
     volumes:
       - ../:/usr/src/myapp/
+      - fl-m2:/root/.m2
   mininet:
     build: ./mn/
     container_name: mn
@@ -22,6 +23,9 @@ services:
       - ../scripts/:/root/scripts/
     environment:
       DISPLAY:
+
+volumes:
+  fl-m2: {}
 
 networks:
   flmnnet:

@@ -2,6 +2,9 @@
 
 cd /usr/src/myapp
 
-ant
+if [ ! -f target/floodlight.jar ]
+then
+	mvn package -Dmaven.test.skip=true 
+fi
 
 java -jar target/floodlight.jar
