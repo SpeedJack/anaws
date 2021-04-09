@@ -40,15 +40,18 @@ def rest_call(path, data, action):
 
 if __name__ == "__main__":
 	print('Docs:', 'https://floodlight.atlassian.net/wiki/spaces/floodlightcontroller/pages/1343539/Floodlight+REST+API')
-	while True:
-		uri = input('uri: ')
-		act = input('method: ')
-		if act is None or act == '':
-			act = 'get'
-		args = input('args: ')
-		if args is None or args == '':
-			args = {}
-		else:
-			args = eval(args)
-		rest_call(uri, args, act)
-		print()
+	try:
+		while True:
+			uri = input('uri: ')
+			act = input('method: ')
+			if act is None or act == '':
+				act = 'get'
+			args = input('args: ')
+			if args is None or args == '':
+				args = {}
+			else:
+				args = eval(args)
+			rest_call(uri, args, act)
+			print()
+	except:
+		pass

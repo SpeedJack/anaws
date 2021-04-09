@@ -1,0 +1,3 @@
+/wm/routing/metric/json
+post
+{'metric': 'utilization'}
