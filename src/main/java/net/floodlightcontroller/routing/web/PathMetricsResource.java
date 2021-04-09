@@ -102,7 +102,7 @@ public class PathMetricsResource extends ServerResource {
             return Collections.singletonMap("error", "invalid path metric: " + metric);
         }
 
-        log.debug("Setting path metric to {}", type.getMetricName());
+        log.info("Setting path metric to {}", type.getMetricName());
         routing.setPathMetric(type);
         return Collections.singletonMap("metric", type.getMetricName());
     }

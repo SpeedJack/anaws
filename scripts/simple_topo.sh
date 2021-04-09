@@ -1,13 +1,10 @@
 #!/bin/bash
-
-
 if [ $# -eq 0 ]
 then
 	CONTROLLERIP=$(ping -c1 fl | sed -nE 's/^PING[^(]+\(([^)]+)\).*/\1/p')
 else
 	CONTROLLERIP="$1"
 fi
-
 
 sudo mn --topo single,3 \
 --mac \

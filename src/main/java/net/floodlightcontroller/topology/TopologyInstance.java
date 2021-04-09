@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * A representation of a network topology. Used internally by
  * {@link TopologyManager}
  */
-public class TopologyInstance {
+public class TopologyInstance implements ITopologyInstance {
 
     public static final short LT_SH_LINK = 1;
     public static final short LT_BD_LINK = 2;
@@ -89,6 +89,7 @@ public class TopologyInstance {
             Map<NodePortTuple, Set<Link>> links,
             Map<DatapathId, Set<OFPort>> portsPerSwitch,
             Map<NodePortTuple, Set<Link>> linksExternal) {
+        log.info("!! TopologyInstance constructor !!");
 
         this.switches = new HashSet<DatapathId>(portsWithLinks.keySet());
         this.portsWithLinks = new HashMap<DatapathId, Set<OFPort>>();
@@ -142,12 +143,14 @@ public class TopologyInstance {
          * Step 1: Compute clusters ignoring ports with > 2 links and 
          * blocked links.
          */
+        log.info("--- compute(): Step 1 - identifyClusters() ---");
         identifyClusters();
 
         /*
          * Step 2: Associate non-blocked links within clusters to the cluster
          * in which they reside. The remaining links are inter-cluster links.
          */
+        log.info("--- compute(): Step 2 - identifyIntraClusterLinks() ---");
         identifyIntraClusterLinks();
 
         /* 
@@ -157,6 +160,7 @@ public class TopologyInstance {
          * DPID). We need a broadcast tree per archipelago since each 
          * archipelago is by definition isolated from all other archipelagos.
          */
+        log.info("--- compute(): Step 3 - identifyArchipelagos() ---");
         identifyArchipelagos();
 
         /*
@@ -165,6 +169,7 @@ public class TopologyInstance {
          * path located (i.e. first run of dijkstra's algorithm) will be used 
          * as the broadcast tree for the archipelago.
          */
+        log.info("--- compute(): Step 4 - computeOrderedPaths() ---");
         computeOrderedPaths();
 
         /*
@@ -173,6 +178,7 @@ public class TopologyInstance {
          * performing path-finding. These are saved into multiple data structures
          * to aid in quick lookup per archipelago, per-switch, and topology-global.
          */
+        log.info("--- compute(): Step 5 - computeBroadcastPortsPerArchipelago() ---");
         computeBroadcastPortsPerArchipelago();
 
         /*
@@ -210,14 +216,14 @@ public class TopologyInstance {
     }
 
     private void printTopology() {
-        log.debug("-----------------Topology-----------------------");
-        log.debug("All Links: {}", links);
-        log.debug("Tunnel Ports: {}", portsTunnel);
-        log.debug("Clusters: {}", clusters);
-        log.debug("Broadcast Ports Per Node (!!): {}", portsBroadcastPerSwitch);
-        log.debug("3+ Link Ports: {}", portsWithMoreThanTwoLinks);
-        log.debug("Archipelagos: {}", archipelagos);
-        log.debug("-----------------------------------------------");  
+        log.info("-----------------Topology-----------------------");
+        log.info("All Links: {}", links);
+        log.info("Tunnel Ports: {}", portsTunnel);
+        log.info("Clusters: {}", clusters);
+        log.info("Broadcast Ports Per Node (!!): {}", portsBroadcastPerSwitch);
+        log.info("3+ Link Ports: {}", portsWithMoreThanTwoLinks);
+        log.info("Archipelagos: {}", archipelagos);
+        log.info("-----------------------------------------------");  
     }
 
     private void identifyIntraClusterLinks() {
@@ -578,6 +584,7 @@ public class TopologyInstance {
     private BroadcastTree dijkstra(Map<DatapathId, Set<Link>> links, DatapathId root,
             Map<Link, Integer> linkCost,
             boolean isDstRooted) {
+        log.info("--- dijkstra() execution ---");
         HashMap<DatapathId, Link> nexthoplinks = new HashMap<DatapathId, Link>();
         HashMap<DatapathId, Integer> cost = new HashMap<DatapathId, Integer>();
         int w;
@@ -647,7 +654,7 @@ public class TopologyInstance {
         }
 
         BroadcastTree ret = new BroadcastTree(nexthoplinks, cost);
-
+        log.info("--- dijkstra() execution complete! ---");
         return ret;
     }
 
@@ -660,7 +667,7 @@ public class TopologyInstance {
 
         switch (TopologyManager.getPathMetricInternal()){
         case HOPCOUNT_AVOID_TUNNELS:
-            log.debug("Using hop count with tunnel bias for metrics");
+            log.info("Using hop count with tunnel bias for metrics");
             for (NodePortTuple npt : portsTunnel) {
                 if (links.get(npt) == null) {
                     continue;
@@ -675,7 +682,7 @@ public class TopologyInstance {
             return linkCost;
 
         case HOPCOUNT:
-            log.debug("Using hop count w/o tunnel bias for metrics");
+            log.info("Using hop count w/o tunnel bias for metrics");
             for (NodePortTuple npt : links.keySet()) {
                 if (links.get(npt) == null) {
                     continue;
@@ -690,7 +697,7 @@ public class TopologyInstance {
             return linkCost;
 
         case LATENCY:
-            log.debug("Using latency for path metrics");
+            log.info("Using latency for path metrics");
             for (NodePortTuple npt : links.keySet()) {
                 if (links.get(npt) == null) {
                     continue;
@@ -711,7 +718,7 @@ public class TopologyInstance {
 
         case LINK_SPEED:
             TopologyManager.statisticsService.collectStatistics(true);
-            log.debug("Using link speed for path metrics");
+            log.info("Using link speed for path metrics");
             for (NodePortTuple npt : links.keySet()) {
                 if (links.get(npt) == null) {
                     continue;
@@ -741,7 +748,7 @@ public class TopologyInstance {
             
         case UTILIZATION:
             TopologyManager.statisticsService.collectStatistics(true);
-            log.debug("Using utilization for path metrics");
+            log.info("Using utilization for path metrics");
             for (NodePortTuple npt : links.keySet()) {
                 if (links.get(npt) == null) continue;
                 SwitchPortBandwidth spb = TopologyManager.statisticsService
@@ -766,7 +773,7 @@ public class TopologyInstance {
             return linkCost;
 
         default:
-            log.debug("Invalid Selection: Using Default Hop Count with Tunnel Bias for Metrics");
+            log.info("Invalid Selection: Using Default Hop Count with Tunnel Bias for Metrics");
             for (NodePortTuple npt : portsTunnel) {
                 if (links.get(npt) == null) continue;
                 for (Link link : links.get(npt)) {
@@ -851,7 +858,7 @@ public class TopologyInstance {
     /*
      * Getter Functions
      */
-
+    @Override
     public boolean pathExists(DatapathId srcId, DatapathId dstId) {
         Archipelago srcA = getArchipelago(srcId);
         Archipelago dstA = getArchipelago(dstId);
@@ -907,6 +914,7 @@ public class TopologyInstance {
      * @param k: The number of routes that you want. Must be positive integer.
      * @return ArrayList of Routes or null if bad parameters
      */
+    @Override
     public List<Path> getPathsFast(DatapathId src, DatapathId dst, int k) {
         PathId routeId = new PathId(src, dst);
         List<Path> routes = pathcache.get(routeId);
@@ -934,6 +942,7 @@ public class TopologyInstance {
      * @param k: The number of path that you want. Must be positive integer.
      * @return list of paths or empty
      */
+    @Override
     public List<Path> getPathsSlow(DatapathId src, DatapathId dst, int k) {
         PathId pathId = new PathId(src, dst);
         List<Path> paths = pathcache.get(pathId);
@@ -988,9 +997,9 @@ public class TopologyInstance {
 
     private List<Path> yens(DatapathId src, DatapathId dst, Integer K, Archipelago aSrc, Archipelago aDst) {
 
-        log.debug("YENS ALGORITHM -----------------");
-        log.debug("Asking for paths from {} to {}", src, dst);
-        log.debug("Asking for {} paths", K);
+        log.info("YENS ALGORITHM -----------------");
+        log.info("Asking for paths from {} to {}", src, dst);
+        log.info("Asking for {} paths", K);
 
         // Find link costs
         Map<Link, Integer> linkCost = initLinkCostMap();
@@ -1021,7 +1030,9 @@ public class TopologyInstance {
         }
 
         /* Use Dijkstra's to find the shortest path, which will also be the first path in A */
+        log.info("*** Calling dijkstra() ***");
         BroadcastTree bt = dijkstra(copyOfLinkDpidMap, dst, linkCost, true);
+        log.info("*** dijkstra() returned ***");
         /* add this initial tree as our archipelago's broadcast tree (aSrc == aDst) */
         aSrc.setBroadcastTree(bt);
         /* now add the shortest path */
@@ -1031,10 +1042,10 @@ public class TopologyInstance {
         if (newroute != null && !newroute.getPath().isEmpty()) { /* should never be null, but might be empty */
             setPathCosts(newroute);
             A.add(newroute);
-            log.debug("Found shortest path in Yens {}", newroute);
+            log.info("Found shortest path in Yens {}", newroute);
         }
         else {
-            log.debug("No paths found in Yen's!");
+            log.info("No paths found in Yen's!");
             return A;
         }
 
@@ -1078,9 +1089,11 @@ public class TopologyInstance {
                 copyOfLinkDpidMap = buildLinkDpidMap(switchesCopy, portsWithLinks, allLinksCopy);
 
                 // Uses Dijkstra's to try to find a shortest path from the spur node to the destination
+                log.info("*** Calling dijkstra() for spurPath ***");
                 Path spurPath = buildPath(new PathId(spurNode, dst), dijkstra(copyOfLinkDpidMap, dst, linkCost, true));
+                log.info("*** dijkstra() for spurPath returned ***");
                 if (spurPath == null || spurPath.getPath().isEmpty()) {
-                    log.debug("spurPath is null");
+                    log.info("spurPath is null");
                     continue;
                 }
 
@@ -1091,10 +1104,10 @@ public class TopologyInstance {
                 Path totalPath = new Path(new PathId(src, dst), totalNpt);
                 setPathCosts(totalPath);
 
-                log.trace("Spur Node: {}", spurNode);
-                log.trace("Root Path: {}", rootPath);
-                log.trace("Spur Path: {}", spurPath);
-                log.trace("Total Path: {}", totalPath);
+                log.info("Spur Node: {}", spurNode);
+                log.info("Root Path: {}", rootPath);
+                log.info("Spur Path: {}", spurPath);
+                log.info("Total Path: {}", totalPath);
                 // Adds the new path into B
                 int flag = 0;
                 for (Path r_B : B) {
@@ -1118,27 +1131,27 @@ public class TopologyInstance {
                 break;
             }
 
-            log.debug("Removing shortest path from {}", B);
+            log.info("Removing shortest path from {}", B);
             // Find the shortest path in B, remove it, and put it in A
-            log.debug("--------------BEFORE------------------------");
+            log.info("--------------BEFORE------------------------");
             for (Path r : B) {
-                log.debug(r.toString());
+                log.info(r.toString());
             }
-            log.debug("--------------------------------------------");
+            log.info("--------------------------------------------");
             Path shortestPath = removeShortestPath(B, linkCost);
-            log.debug("--------------AFTER------------------------");
+            log.info("--------------AFTER------------------------");
             for (Path r : B) {
-                log.debug(r.toString());
+                log.info(r.toString());
             }
-            log.debug("--------------------------------------------");
+            log.info("--------------------------------------------");
 
             if (shortestPath != null) {
-                log.debug("Adding new shortest path to {} in Yen's", shortestPath);
+                log.info("Adding new shortest path to {} in Yen's", shortestPath);
                 A.add(shortestPath);
-                log.debug("A: {}", A);
+                log.info("A: {}", A);
             }
             else {
-                log.debug("removeShortestPath returned {}", shortestPath);
+                log.info("removeShortestPath returned {}", shortestPath);
             }
         }
 
@@ -1146,12 +1159,12 @@ public class TopologyInstance {
         for (Path path : A) {
             path.setPathIndex(A.indexOf(path));
         }
-        //log.debug("END OF YEN'S --------------------");
+        log.info("END OF YEN'S --------------------");
         return A;
     }
 
     private Path removeShortestPath(List<Path> routes, Map<Link, Integer> linkCost) {
-        log.debug("REMOVE SHORTEST PATH -------------");
+        log.info("REMOVE SHORTEST PATH -------------");
         // If there is nothing in B, return
         if(routes == null){
             log.debug("Routes == null");
@@ -1183,11 +1196,11 @@ public class TopologyInstance {
             }
         }
 
-        log.debug("Remove {} from {}", shortestPath, routes);
+        log.info("Remove {} from {}", shortestPath, routes);
         // Remove the route from B and return it
         routes.remove(shortestPath);
 
-        log.debug("Shortest path: {}", shortestPath);
+        log.info("Shortest path: {}", shortestPath);
         return shortestPath;
     }
 
@@ -1201,6 +1214,7 @@ public class TopologyInstance {
      * @param dstPort
      * @return
      */
+    @Override
     public Path getPath(DatapathId srcId, OFPort srcPort,
             DatapathId dstId, OFPort dstPort) {
         Path r = getPath(srcId, dstId);
@@ -1229,6 +1243,7 @@ public class TopologyInstance {
      * @param dstId
      * @return
      */
+    @Override
     public Path getPath(DatapathId srcId, DatapathId dstId) {
         PathId id = new PathId(srcId, dstId);
 

@@ -9,6 +9,8 @@ services:
     volumes:
       - ../:/usr/src/myapp/
       - fl-m2:/root/.m2
+    ports:
+      - "8080:8080"
   mininet:
     build: ./mn/
     container_name: mn
@@ -21,6 +23,7 @@ services:
     privileged: true
     volumes:
       - ../scripts/:/root/scripts/
+      - /lib/modules:/lib/modules
     environment:
       DISPLAY:
 

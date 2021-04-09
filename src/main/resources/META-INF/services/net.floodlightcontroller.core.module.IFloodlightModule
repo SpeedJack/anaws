@@ -18,6 +18,7 @@ org.sdnplatform.sync.internal.SyncTorture
 net.floodlightcontroller.simpleft.FT
 net.floodlightcontroller.staticentry.StaticEntryPusher
 net.floodlightcontroller.topology.TopologyManager
+net.floodlightcontroller.topology.DualAscentTopologyManager
 net.floodlightcontroller.forwarding.Forwarding
 net.floodlightcontroller.loadbalancer.LoadBalancer
 net.floodlightcontroller.linkdiscovery.internal.LinkDiscoveryManager
