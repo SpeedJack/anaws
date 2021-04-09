@@ -1,0 +1,12 @@
+start: docker-compose up -d
+log floodlight: docker logs -f fl
+mininet shell: docker exec -it mn /bin/bash
+stop: docker-compose down
+
+inside mn container, scripts are in a subfolder: cd scripts/
+
+scripts can be called with a parameter to specify the ip addr of the
+controller (default to localhost)
+to get ip addr of floodlight:
+- from mn container shell: ping -c1 floodlight
+- from outside: docker inspect fl | grep IPAddress

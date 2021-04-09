@@ -1,0 +1,27 @@
+version: "3.4"
+
+services:
+  floodlight:
+    build: ./fl/
+    container_name: fl
+    networks:
+      - flmnnet
+    volumes:
+      - ../:/usr/src/myapp/
+  mininet:
+    build: ./mn/
+    container_name: mn
+    networks:
+      - flmnnet
+    links:
+      - "floodlight"
+    depends_on:
+      - floodlight
+    privileged: true
+    volumes:
+      - ../scripts/:/root/scripts/
+    environment:
+      DISPLAY:
+
+networks:
+  flmnnet:
