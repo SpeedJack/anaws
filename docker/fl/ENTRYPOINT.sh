@@ -7,4 +7,5 @@ then
 	mvn package -Dmaven.test.skip=true 
 fi
 
-java -jar target/floodlight.jar
+./floodlight.sh
+# java -jar target/floodlight.jar
