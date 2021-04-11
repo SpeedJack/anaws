@@ -88,6 +88,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	private Map<Set<DatapathId>, Integer> finalCut = new HashMap<>();
 	private Integer dualCost;
 	private HashMap<DatapathId, HashMap<DatapathId, Boolean>> connections;
+	private Set<Set<DatapathId>> finalRootComponents = new HashSet<>();
 	private Comparator<Link> comparatorLinks = new Comparator<Link>() {
 		@Override
 		public int compare(Link linkLeft, Link linkRight)
@@ -756,6 +757,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				if (areConnected(auxiliaryNode, node))
 					rootComponent.add(auxiliaryNode);
 			}
+			if (finalRootComponents.contains(rootComponent)) {
+				log.info("--------------- EH VOLEVIIIIIIIIII ------------");
+				continue;
+			}
 			log.info("--------------- SUCCESSO findRootComp ------------");
 			return rootComponent;
 		}
@@ -770,6 +775,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("--- dualAscent() execution ---");
 		log.info("root: " + root.toString());
 		log.info("links: " + links.toString());
+		// INIZIALIZZAZIONE STRUTTURE 
 		Map<DatapathId, Set<Link>> auxiliaryGraph = new HashMap<>();
 		connections = new HashMap<>();
 
@@ -777,7 +783,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			linkCost = new HashMap<>();
 		reducedCost.clear();
 		finalCut.clear();
+		finalRootComponents.clear();
 		dualCost = 0;
+		// INSERIMENTO LINK E NODI NELLE STRUTTURE
 		for (DatapathId node: links.keySet()) {
 			connections.put(node, new HashMap<DatapathId, Boolean>());
 			for (DatapathId internalNode: links.keySet())
@@ -793,6 +801,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		Set<DatapathId> rootComponent = findRootComp(root, links, auxiliaryGraph);
 		while (rootComponent != null) {
 			Link minLink = findMinArc(rootComponent, links, auxiliaryGraph);
+			if (minLink == null) {
+				finalRootComponents.add(rootComponent);
+			}
 			editCosts(rootComponent, minLink, links);
 			addArc(minLink, auxiliaryGraph, links);
 			rootComponent = findRootComp(root, links, auxiliaryGraph);
@@ -957,7 +968,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	{	
 		log.info("--------------- DENTRO findMinArc  ------------");
 		Link minLink = null;
-		for (DatapathId node: rootComponent)
+		for (DatapathId node: rootComponent) {
 			for (Link link: links.get(node)) {
 				if (node.equals(link.getDst())) {
 					if (auxiliaryGraph.get(node).contains(link))
@@ -968,7 +979,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 						minLink = link;
 				}
 			}
-	
+		}
 		if (minLink == null) {
 			log.info("--------------- FINE findMinArc ------------");
 		}
