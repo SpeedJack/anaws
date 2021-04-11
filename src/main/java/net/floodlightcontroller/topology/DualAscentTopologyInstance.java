@@ -1011,7 +1011,6 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				}
 			}
 			return linkCost;
-
 		case HOPCOUNT:
 			log.info("Using hop count w/o tunnel bias for metrics");
 			for (NodePortTuple npt: links.keySet()) {
@@ -1094,6 +1093,28 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			}
 			return linkCost;
 
+		case CUSTOM:
+			log.info("Questa e' la nostra metrica!!!");
+			for (NodePortTuple npt: portsTunnel) {
+				if (links.get(npt) == null)
+					continue;
+				IOFSwitch s = DualAscentTopologyManager.switchService.getSwitch(npt.getNodeId());
+				if (s != null) {
+					tunnel_weight = s.getPorts().size();
+				}
+				else {
+					log.info("s sta a null");
+					tunnel_weight = 1;
+				}
+				for (Link link : links.get(npt)) {
+					if (link == null)
+						continue;
+					// tutto prima serve per avere il singolo link
+					linkCost.put(link, tunnel_weight);
+				}
+			}
+			return linkCost;
+			
 		default:
 			log.info("Invalid Selection: Using Default Hop Count with Tunnel Bias for Metrics");
 			for (NodePortTuple npt: portsTunnel) {
@@ -1106,6 +1127,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				}
 			}
 			return linkCost;
+			
 		}
 	}
 

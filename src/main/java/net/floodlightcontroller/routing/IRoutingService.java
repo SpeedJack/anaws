@@ -39,7 +39,9 @@ public interface IRoutingService extends IFloodlightService {
         HOPCOUNT("hopcount"), 
         HOPCOUNT_AVOID_TUNNELS("hopcount_avoid_tunnels"), 
         UTILIZATION("utilization"), 
-        LINK_SPEED("link_speed");
+        LINK_SPEED("link_speed"),
+        CUSTOM("custom");
+    	
         
         String name;
 

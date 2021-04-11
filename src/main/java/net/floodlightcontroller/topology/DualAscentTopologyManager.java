@@ -658,6 +658,9 @@ public class DualAscentTopologyManager implements IFloodlightModule, ITopologySe
 			case "link_speed":
 				pathMetric = PATH_METRIC.LINK_SPEED;
 				break;
+			case "custom":
+				pathMetric = PATH_METRIC.CUSTOM;
+				break;
 			default:
 				log.error("Invalid routing metric {}. Using default {}", metric,
 					pathMetric.getMetricName());
