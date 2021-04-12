@@ -720,7 +720,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return connections.get(node1).get(node2);
 	}
 
-	private HashSet<DatapathId> findRootComp(DatapathId root, Map<DatapathId, Set<Link>> links, Map<DatapathId, Set<Link>> auxiliaryGraph)
+	private HashSet<DatapathId> findRootComp(DatapathId root, Map<DatapathId, Set<Link>> links, Graph auxiliaryGraph)
 	{
 		log.info("--------------- DENTRO findRootComp ------------");
 		HashSet<DatapathId> rootComponent = new HashSet<>();
@@ -751,7 +751,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					continue;
 				rootComponent.add(otherNode);
 			}
-			for (DatapathId auxiliaryNode: auxiliaryGraph.keySet()) {
+			for (DatapathId auxiliaryNode: auxiliaryGraph.getNodes()) {
 				if (auxiliaryNode.equals(root) || rootComponent.contains(auxiliaryNode))
 					continue;
 				if (areConnected(auxiliaryNode, node))
@@ -769,6 +769,32 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return null;
 	}
 
+	private class Graph extends Cluster{
+		/**
+		 * Wrapper class for the links available in a graph. It does not provide a deep copy.
+		 * It stores only the reference to the links variable.
+		 */		
+		public Graph() {
+			this(new HashMap<>());
+		}
+		public Graph(Map<DatapathId, Set<Link>> links) {
+			id = DatapathId.NONE;
+			this.links = links;
+		}
+		
+		public Set<Entry<DatapathId, Set<Link>>> getEntries() {
+			return links.entrySet();
+		}
+
+		public Set<Link> getLinks(DatapathId node) {
+			return links.get(node);
+		}
+		public boolean hasNode(DatapathId node) {
+			// TODO Auto-generated method stub
+			return links.containsKey(node);
+		}
+	}
+	
 	protected BroadcastTree dualAscent(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
 		boolean isDstRooted)
 	{
@@ -776,7 +802,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("root: " + root.toString());
 		log.info("links: " + links.toString());
 		// INIZIALIZZAZIONE STRUTTURE 
-		Map<DatapathId, Set<Link>> auxiliaryGraph = new HashMap<>();
+		Graph auxiliaryGraph = new Graph();
 		connections = new HashMap<>();
 
 		if (linkCost == null)
@@ -795,7 +821,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					linkCost.put(link, 1);
 				reducedCost.put(link, linkCost.get(link));
 			}
-			auxiliaryGraph.put(node, new HashSet<Link>());
+			auxiliaryGraph.add(node);
 		}
 		log.info("------- INIZIO ALGORITMO DUAL ASCENT ---------");
 		Set<DatapathId> rootComponent = findRootComp(root, links, auxiliaryGraph);
@@ -810,22 +836,21 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 		log.info("------------- FINE ALGORITMO DUAL ASCENT ----------");
 		HashSet<DatapathId> toRemove = new HashSet<DatapathId>();
-		for (DatapathId node: auxiliaryGraph.keySet()) {
+		for (DatapathId node: auxiliaryGraph.getNodes()) {
 			if (!areConnected(root, node)) {
 				toRemove.add(node);
 			}
 		}
-		Map<DatapathId, Set<Link>> finalLinks = new HashMap<>();
-		for (DatapathId node: auxiliaryGraph.keySet()) {
-			finalLinks.put(node, new HashSet<>());
+		Graph finalLinks = new Graph();
+		for (DatapathId node: auxiliaryGraph.getNodes()) {
+			finalLinks.add(node);
 		}
-		for (Entry<DatapathId, Set<Link>> node: auxiliaryGraph.entrySet()) {
+		for (Entry<DatapathId, Set<Link>> node: auxiliaryGraph.getEntries()) {
 			if (toRemove.contains(node.getKey())) {
 				continue;
 			}
 			for (Link link: node.getValue()) {
-				finalLinks.get(link.getSrc()).add(link);
-				finalLinks.get(link.getDst()).add(link);
+				finalLinks.addLink(link);
 			}
 		}
 		BroadcastTree tree = buildBroadcastTree(root, linkCost, finalLinks, isDstRooted);
@@ -844,7 +869,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	}
 
 	private BroadcastTree buildBroadcastTree(DatapathId root, Map<Link, Integer> linkCost,
-		Map<DatapathId, Set<Link>> auxiliaryGraph, boolean isDstRooted)
+		Graph auxiliaryGraph, boolean isDstRooted)
 	{
 		log.info("--- buildBroadcastTree() execution ---");
 		HashMap<DatapathId, Link> linksGrafoA = new HashMap<>();
@@ -853,7 +878,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		HashSet<DatapathId> nodiVisti = new HashSet<>();
 		PriorityQueue<NodeDist> nodeq = new PriorityQueue<NodeDist>();
 
-		for (DatapathId node: auxiliaryGraph.keySet()) {
+		for (DatapathId node: auxiliaryGraph.getNodes()) {
 			linksGrafoA.put(node, null);
 			costsNodesGrafoA.put(node, MAX_PATH_WEIGHT);
 		}
@@ -871,10 +896,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 				log.info("Links: {}", links.toString());
 				log.info("Node: {}", node.toString());
-				if (auxiliaryGraph.get(node) == null)
+				if (!auxiliaryGraph.hasNode(node))
 					continue;
-				log.info("SetLinks: {}", auxiliaryGraph.get(node).toString());
-				for (Link link: auxiliaryGraph.get(node)) {
+				log.info("SetLinks: {}", auxiliaryGraph.getLinks(node).toString());
+				for (Link link: auxiliaryGraph.getLinks(node)) {
 					DatapathId neighbor;
 
 					neighbor = (isDstRooted ? link.getSrc() : link.getDst());
@@ -905,27 +930,27 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return broadcastTree;
 	}
 
-	private void addArc(Link minLink, Map<DatapathId, Set<Link>> auxiliaryGraph, Map<DatapathId, Set<Link>> links)
+	private void addArc(Link minLink, Graph auxiliaryGraph, Map<DatapathId, Set<Link>> links)
 	{
 		if (minLink != null) {
-			auxiliaryGraph.get(minLink.getSrc()).add(minLink);
-			auxiliaryGraph.get(minLink.getDst()).add(minLink);
+			DatapathId nodoSrc = minLink.getSrc();
+			DatapathId nodoDst = minLink.getDst();
+			auxiliaryGraph.addLink(minLink);
 			// voglio provare ad aggiungere anche il link nell'altro verso
 			// perche' in una vera rete, ogni link e' bidirezionale
 			// mentre su floodlight un link e' monodirezionale
 			// Secondo il dual ascent il focus sta sulla destinazione
 			// quindi qui aggiungo da dst a src
-			DatapathId nodoSrc = minLink.getSrc();
-			DatapathId nodoDst = minLink.getDst();
-			for (Link link: links.get(nodoSrc))
-				if (nodoDst.equals(link.getSrc()) && nodoSrc.equals(link.getDst())) {
-					auxiliaryGraph.get(link.getSrc()).add(link);
-					auxiliaryGraph.get(link.getDst()).add(link);
+			
+			for (Link oppositeLink: links.get(nodoSrc)) {
+				if (nodoDst.equals(oppositeLink.getSrc()) && nodoSrc.equals(oppositeLink.getDst())) {
+					auxiliaryGraph.addLink(oppositeLink);
 					break;
 				}
+			}
 			// fine prova
-			for (DatapathId node1: auxiliaryGraph.keySet()) {
-				for (DatapathId node2: auxiliaryGraph.keySet()) {
+			for (DatapathId node1: auxiliaryGraph.getNodes()) {
+				for (DatapathId node2: auxiliaryGraph.getNodes()) {
 					if (areConnected(node1, minLink.getSrc()) &&
 						areConnected(minLink.getDst(), node2)) {
 						connections.get(node1).put(node2, true);
@@ -964,14 +989,14 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("--------------- FINE editCosts -----------");
 	}
 
-	private Link findMinArc(Set<DatapathId> rootComponent, Map<DatapathId, Set<Link>> links, Map<DatapathId, Set<Link>> auxiliaryGraph)
+	private Link findMinArc(Set<DatapathId> rootComponent, Map<DatapathId, Set<Link>> links, Graph auxiliaryGraph)
 	{	
 		log.info("--------------- DENTRO findMinArc  ------------");
 		Link minLink = null;
 		for (DatapathId node: rootComponent) {
 			for (Link link: links.get(node)) {
 				if (node.equals(link.getDst())) {
-					if (auxiliaryGraph.get(node).contains(link))
+					if (auxiliaryGraph.getLinks(node).contains(link))
 						continue;
 					// tutti i pesi sono a 1 dal POV di floodlight, quindi in realta' basta
 					// restituire il primo link
