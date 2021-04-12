@@ -13,7 +13,7 @@ JVM_OPTS=""
 #JVM_OPTS="$JVM_OPTS -XX:MaxInlineSize=8192 -XX:FreqInlineSize=8192"
 #JVM_OPTS="$JVM_OPTS -XX:CompileThreshold=1500 -XX:PreBlockSpin=8"
 #JVM_OPTS="$JVM_OPTS -Dpython.security.respectJavaAccessibility=false"
-JVM_OPTS="$JVM_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1044"
+#JVM_OPTS="$JVM_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=1044"
 
 # Create a logback file if required
 [ -f ${FL_LOGBACK} ] || cat <<EOF_LOGBACK >${FL_LOGBACK}
@@ -34,4 +34,4 @@ JVM_OPTS="$JVM_OPTS -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,add
 EOF_LOGBACK
 
 echo "Starting floodlight server ..."
-java ${JVM_OPTS} -Dlogback.configurationFile=${FL_LOGBACK} -jar ${FL_JAR} "$@"
+java ${JVM_OPTS} -jar ${FL_JAR} "$@"

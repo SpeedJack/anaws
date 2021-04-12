@@ -7,7 +7,7 @@ else
 fi
 
 sudo mn \
---custom spine-leaf.py \
+--custom nostra-topo.py \
 --topo tower \
 --mac \
 --switch ovsk \

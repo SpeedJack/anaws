@@ -97,7 +97,10 @@ public class PathMetricsResource extends ServerResource {
             type = PATH_METRIC.HOPCOUNT_AVOID_TUNNELS;
         } else if (metric.equals(PATH_METRIC.LINK_SPEED.getMetricName())) {
             type = PATH_METRIC.LINK_SPEED;
-        } else {
+        } else if (metric.equals(PATH_METRIC.CUSTOM.getMetricName())) {
+        	type = PATH_METRIC.CUSTOM;
+        }
+        else {
             log.error("Invalid input {}", metric);
             return Collections.singletonMap("error", "invalid path metric: " + metric);
         }

@@ -15,11 +15,11 @@ class Tower( Topo ):
     def __init__(self):
         Topo.__init__(self)
         switches = []
-        for i in range(20):
+        for i in range(10):
             sn = i + 1
             switch = self.addSwitch( 's%d' % sn )
             switches.append(switch)
-            if (i % 5 == 0):
+            if (i % 3 == 0):
                 host = self.addHost( 'h%d' % sn )
                 self.addLink(host, switch)
         links = {		
@@ -33,54 +33,22 @@ class Tower( Topo ):
                 4,7,8,9
             ],
             4: [
-                5,9,10,11
+                5,9,10
             ],
-            5: [
-                11
-            ],
+            5: [],
             6: [
-                7,12
+                7
             ],
             7: [
-                8,9,12,13
+                8,9
             ],
             8: [
-                9,12,13,14
+                9
             ],
             9: [
-                10,14,15
+                10
             ],
-            10: [
-                11,15,16
-            ],
-            11 : [
-                16
-            ],
-            12: [
-                13,17
-            ],
-            13: [
-                14,17,18
-            ],
-            14: [
-                15,18,20
-            ],
-            15: [
-                16,19,20
-            ],
-            16: [
-                19
-            ],
-            17: [
-                18
-            ],
-            18: [
-                20
-            ],
-            19: [
-                20
-            ],
-            20: []
+            10: []
         }
         for a,b_list in links.items():
             for b in b_list:

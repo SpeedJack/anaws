@@ -21,12 +21,14 @@ services:
       - "floodlight"
     depends_on:
       - floodlight
+    tty: true
     privileged: true
     volumes:
       - ../scripts/:/root/scripts/
       - /lib/modules:/lib/modules
+      - /tmp/.X11-unix:/tmp/.X11-unix
     environment:
-      DISPLAY:
+      - DISPLAY
 
 volumes:
   fl-m2: {}
