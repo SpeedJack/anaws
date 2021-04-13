@@ -201,7 +201,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 		
 		public String toString() {
-	        return "[Graph links: " + this.links.keySet() + "]";
+	        return "[Graph root: " + this.root.toString() +
+	        		", target: " + this.targetNodes.toString() +
+	        		", links: " + this.links.toString() + "]";
 	    }
 	}
 //------------------------------------------------------------------------------
@@ -900,6 +902,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		Graph auxiliaryGraph)
 	{
 		log.info("--- buildBroadcastTree() execution ---");
+		log.info("Final auxiliary graph: " + auxiliaryGraph.toString());
 		HashMap<DatapathId, Link> linksGrafoA = new HashMap<>();
 		HashMap<DatapathId, Integer> costsNodesGrafoA = new HashMap<>();
 		Integer costLink;
@@ -922,11 +925,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				if (nodiVisti.contains(node)) continue;
 				nodiVisti.add(node);
 
-				log.info("Links: {}", links.toString());
-				log.info("Node: {}", node.toString());
+				log.info("DJ Node: {}", node.toString());
 				if (!auxiliaryGraph.hasNode(node))
 					continue;
-				log.info("SetLinks: {}", auxiliaryGraph.getLinks(node).toString());
 				for (Link link: auxiliaryGraph.getLinks(node)) {
 					DatapathId neighbor = link.getSrc();
 
@@ -953,6 +954,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			}
 		BroadcastTree broadcastTree = new BroadcastTree(linksGrafoA, costsNodesGrafoA);
 		log.info("--- buildBroadcastTree() execution complete! ---");
+		log.info("Broadcast tree: " + broadcastTree.toString());
 		return broadcastTree;
 	}
 
