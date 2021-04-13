@@ -105,6 +105,98 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				return costLinkLeft.compareTo(costLinkRight);
 		}
 	};
+	
+	private class Graph{
+		/**
+		 * Wrapper class for the links available in a graph. It does not provide a deep copy.
+		 * It stores only the reference to the links variable.
+		 */	
+	    private Map<DatapathId, Set<Link>> links;
+	    private Set<DatapathId> targetNodes;
+	    private DatapathId root;
+	    
+		public Graph() {
+			this(new HashMap<>());
+		}
+		public Graph(Map<DatapathId, Set<Link>> links) {
+			this.links = links;
+			this.targetNodes = new HashSet<>();
+		}
+		
+		public void add(DatapathId node) {
+	        if (!this.hasNode(node)) {
+	            this.links.put(node, new HashSet<Link>());
+	        }
+	    }
+		public void remove(DatapathId node) {
+			for (Link link: this.getLinks(node)) {
+				this.removeLink(link);
+			}
+			this.links.remove(node);
+		}
+		
+		public void addTarget(DatapathId target) {
+			this.add(target);
+			if (!this.hasTarget(target)) {
+				this.targetNodes.add(target);
+	        }
+		}
+		
+		public void setRoot(DatapathId root) {
+			this.add(root);
+			this.root = root;
+		}
+		
+		public DatapathId getRoot() {
+			return this.root;
+		}
+		
+		public void addLink(Link l) {
+	        this.add(l.getSrc());
+	        this.links.get(l.getSrc()).add(l);
+
+	        this.add(l.getDst());
+	        this.links.get(l.getDst()).add(l);
+	     }
+		
+		public void removeLink(Link l) {
+	        this.links.get(l.getSrc()).remove(l);
+	        this.links.get(l.getDst()).remove(l);
+		}
+		
+		public Set<Entry<DatapathId, Set<Link>>> getTable() {
+			return this.links.entrySet();
+		}
+		
+	    public Set<DatapathId> getNodes() {
+	        return this.links.keySet();
+	    }
+	    
+	    public Set<DatapathId> getTargets() {
+	    	return this.targetNodes;
+	    }
+		
+		public Set<Link> getLinks(DatapathId node) {
+			return this.links.get(node);
+		}
+		
+		public boolean hasNode(DatapathId node) {
+			// TODO Auto-generated method stub
+			return this.links.containsKey(node);
+		}
+		
+		public boolean hasLink(DatapathId node, Link link) {
+			return (this.hasNode(node) ? this.getLinks(node).contains(link) : false);
+		}
+		
+		public boolean hasTarget(DatapathId target) {
+			return this.targetNodes.contains(target);
+		}
+		
+		public String toString() {
+	        return "[Graph links: " + this.links.keySet() + "]";
+	    }
+	}
 //------------------------------------------------------------------------------
 
 	private Map<PathId, List<Path>> pathcache; /* contains computed paths ordered best to worst */
@@ -720,88 +812,22 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return connections.get(node1).get(node2);
 	}
 
-	private HashSet<DatapathId> findRootComp(DatapathId root, Map<DatapathId, Set<Link>> links, Graph auxiliaryGraph)
-	{
-		log.info("--------------- DENTRO findRootComp ------------");
-		HashSet<DatapathId> rootComponent = new HashSet<>();
-
-		// Find node for which neither root nor any other node dangles from.
-		// Note: since each node is a target node (except root of course),
-		// here we check for every node in the complete graph, but it should
-		// be only on the target nodes
-		if (!links.containsKey(root)) {
-			return null;
-		}
-		externCycle: for (DatapathId node: links.keySet()) {
-			rootComponent.clear();
-			if (node.equals(root))
-				continue;
-			if (areConnected(root, node))
-				continue;
-			rootComponent.add(node);
-			// Same reasoning as above is applied here
-			for (DatapathId otherNode: links.keySet()) {
-				if (otherNode.equals(root) || otherNode.equals(node))
-					continue;
-				boolean con21 = areConnected(otherNode, node);
-				boolean con12 = areConnected(node, otherNode);
-				if (con21 && !con12)
-					continue externCycle;
-				else if (!con21)
-					continue;
-				rootComponent.add(otherNode);
-			}
-			for (DatapathId auxiliaryNode: auxiliaryGraph.getNodes()) {
-				if (auxiliaryNode.equals(root) || rootComponent.contains(auxiliaryNode))
-					continue;
-				if (areConnected(auxiliaryNode, node))
-					rootComponent.add(auxiliaryNode);
-			}
-			if (finalRootComponents.contains(rootComponent)) {
-				log.info("--------------- EH VOLEVIIIIIIIIII ------------");
-				continue;
-			}
-			log.info("--------------- SUCCESSO findRootComp ------------");
-			return rootComponent;
-		}
-
-		log.info("findRootComp(): No root component found.");
-		return null;
-	}
-
-	private class Graph extends Cluster{
-		/**
-		 * Wrapper class for the links available in a graph. It does not provide a deep copy.
-		 * It stores only the reference to the links variable.
-		 */		
-		public Graph() {
-			this(new HashMap<>());
-		}
-		public Graph(Map<DatapathId, Set<Link>> links) {
-			id = DatapathId.NONE;
-			this.links = links;
-		}
-		
-		public Set<Entry<DatapathId, Set<Link>>> getEntries() {
-			return links.entrySet();
-		}
-
-		public Set<Link> getLinks(DatapathId node) {
-			return links.get(node);
-		}
-		public boolean hasNode(DatapathId node) {
-			// TODO Auto-generated method stub
-			return links.containsKey(node);
-		}
-	}
 	
-	protected BroadcastTree dualAscent(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
-		boolean isDstRooted)
-	{
+
+	
+	protected BroadcastTree dualAscent(
+			Map<DatapathId, Set<Link>> links, 
+			DatapathId root, 
+			DatapathId target, 
+			Map<Link, Integer> linkCost,
+			boolean isDstRooted
+	) {
 		log.info("--- dualAscent() execution ---");
 		log.info("root: " + root.toString());
+		log.info("target: " + target.toString());
 		log.info("links: " + links.toString());
 		// INIZIALIZZAZIONE STRUTTURE 
+		Graph completeGraph = new Graph(links);
 		Graph auxiliaryGraph = new Graph();
 		connections = new HashMap<>();
 
@@ -812,11 +838,13 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		finalRootComponents.clear();
 		dualCost = 0;
 		// INSERIMENTO LINK E NODI NELLE STRUTTURE
-		for (DatapathId node: links.keySet()) {
+		auxiliaryGraph.setRoot(root);
+		auxiliaryGraph.addTarget(target);
+		for (DatapathId node: completeGraph.getNodes()) {
 			connections.put(node, new HashMap<DatapathId, Boolean>());
-			for (DatapathId internalNode: links.keySet())
+			for (DatapathId internalNode: completeGraph.getNodes())
 				connections.get(node).put(internalNode, (node.equals(internalNode)));
-			for (Link link: links.get(node)) {
+			for (Link link: completeGraph.getLinks(node)) {
 				if (linkCost.get(link) == null)
 					linkCost.put(link, 1);
 				reducedCost.put(link, linkCost.get(link));
@@ -824,15 +852,15 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			auxiliaryGraph.add(node);
 		}
 		log.info("------- INIZIO ALGORITMO DUAL ASCENT ---------");
-		Set<DatapathId> rootComponent = findRootComp(root, links, auxiliaryGraph);
+		Set<DatapathId> rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		while (rootComponent != null) {
-			Link minLink = findMinArc(rootComponent, links, auxiliaryGraph);
+			Link minLink = findMinArc(rootComponent, completeGraph, auxiliaryGraph);
 			if (minLink == null) {
 				finalRootComponents.add(rootComponent);
 			}
-			editCosts(rootComponent, minLink, links);
-			addArc(minLink, auxiliaryGraph, links);
-			rootComponent = findRootComp(root, links, auxiliaryGraph);
+			editCosts(rootComponent, minLink, completeGraph);
+			addArc(minLink, auxiliaryGraph, completeGraph);
+			rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		}
 		log.info("------------- FINE ALGORITMO DUAL ASCENT ----------");
 		HashSet<DatapathId> toRemove = new HashSet<DatapathId>();
@@ -841,19 +869,12 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				toRemove.add(node);
 			}
 		}
-		Graph finalLinks = new Graph();
-		for (DatapathId node: auxiliaryGraph.getNodes()) {
-			finalLinks.add(node);
+		
+		for (DatapathId node: toRemove) {
+			auxiliaryGraph.remove(node);
 		}
-		for (Entry<DatapathId, Set<Link>> node: auxiliaryGraph.getEntries()) {
-			if (toRemove.contains(node.getKey())) {
-				continue;
-			}
-			for (Link link: node.getValue()) {
-				finalLinks.addLink(link);
-			}
-		}
-		BroadcastTree tree = buildBroadcastTree(root, linkCost, finalLinks, isDstRooted);
+		
+		BroadcastTree tree = buildBroadcastTree(target, linkCost, auxiliaryGraph, isDstRooted);
 
 		Integer cost = 0;
 		if (tree.getLinks().values() != null)
@@ -930,38 +951,22 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return broadcastTree;
 	}
 
-	private void addArc(Link minLink, Graph auxiliaryGraph, Map<DatapathId, Set<Link>> links)
+	private void addArc(Link minLink, Graph auxiliaryGraph, Graph completeGraph)
 	{
 		if (minLink != null) {
-			DatapathId nodoSrc = minLink.getSrc();
-			DatapathId nodoDst = minLink.getDst();
 			auxiliaryGraph.addLink(minLink);
-			// voglio provare ad aggiungere anche il link nell'altro verso
-			// perche' in una vera rete, ogni link e' bidirezionale
-			// mentre su floodlight un link e' monodirezionale
-			// Secondo il dual ascent il focus sta sulla destinazione
-			// quindi qui aggiungo da dst a src
-			
-			for (Link oppositeLink: links.get(nodoSrc)) {
-				if (nodoDst.equals(oppositeLink.getSrc()) && nodoSrc.equals(oppositeLink.getDst())) {
-					auxiliaryGraph.addLink(oppositeLink);
-					break;
-				}
-			}
-			// fine prova
 			for (DatapathId node1: auxiliaryGraph.getNodes()) {
 				for (DatapathId node2: auxiliaryGraph.getNodes()) {
 					if (areConnected(node1, minLink.getSrc()) &&
 						areConnected(minLink.getDst(), node2)) {
 						connections.get(node1).put(node2, true);
-						connections.get(node2).put(node1, true);
 					}
 				}
 			}
 		}
 	}
 
-	private void editCosts(Set<DatapathId> rootComponent, Link minLink, Map<DatapathId, Set<Link>> links)
+	private void editCosts(Set<DatapathId> rootComponent, Link minLink, Graph completeGraph)
 	{
 		// E' possibile che il grafo sia ancora vuoto (topologia reale ancora vuota),
 		// quindi nella reducedCost non c'e' il link
@@ -972,7 +977,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		dualCost += minCost;
 		finalCut.put(rootComponent, minCost);
 		for (DatapathId node: rootComponent) {
-			Set<Link> nodeLinks = links.get(node);
+			Set<Link> nodeLinks = completeGraph.getLinks(node);
 			if (nodeLinks == null)
 				continue;
 			for (Link ingressLink: nodeLinks) {
@@ -989,14 +994,14 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("--------------- FINE editCosts -----------");
 	}
 
-	private Link findMinArc(Set<DatapathId> rootComponent, Map<DatapathId, Set<Link>> links, Graph auxiliaryGraph)
+	private Link findMinArc(Set<DatapathId> rootComponent, Graph completeGraph, Graph auxiliaryGraph)
 	{	
 		log.info("--------------- DENTRO findMinArc  ------------");
 		Link minLink = null;
 		for (DatapathId node: rootComponent) {
-			for (Link link: links.get(node)) {
+			for (Link link: completeGraph.getLinks(node)) {
 				if (node.equals(link.getDst())) {
-					if (auxiliaryGraph.getLinks(node).contains(link))
+					if (auxiliaryGraph.hasLink(node, link))
 						continue;
 					// tutti i pesi sono a 1 dal POV di floodlight, quindi in realta' basta
 					// restituire il primo link
@@ -1013,6 +1018,58 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}	
 		return minLink;
 	}
+	
+	
+	private HashSet<DatapathId> findRootComp(Graph completeGraph, Graph auxiliaryGraph)
+	{
+		log.info("--------------- DENTRO findRootComp ------------");
+		HashSet<DatapathId> rootComponent = new HashSet<>();
+
+		// Find node for which neither root nor any other node dangles from.
+		// Note: since each node is a target node (except root of course),
+		// here we check for every node in the complete graph, but it should
+		// be only on the target nodes
+		if (!completeGraph.hasNode(auxiliaryGraph.getRoot())) {
+			return null;
+		}
+		DatapathId root = auxiliaryGraph.getRoot();
+		externCycle: for (DatapathId node: auxiliaryGraph.getTargets()) {
+			rootComponent.clear();
+			if (node.equals(root))
+				continue;
+			if (areConnected(root, node))
+				continue;
+			rootComponent.add(node);
+			// Same reasoning as above is applied here
+			for (DatapathId otherNode: auxiliaryGraph.getTargets()) {
+				if (otherNode.equals(root) || otherNode.equals(node))
+					continue;
+				boolean con21 = areConnected(otherNode, node);
+				boolean con12 = areConnected(node, otherNode);
+				if (con21 && !con12)
+					continue externCycle;
+				else if (!con21)
+					continue;
+				rootComponent.add(otherNode);
+			}
+			for (DatapathId auxiliaryNode: auxiliaryGraph.getNodes()) {
+				if (auxiliaryNode.equals(root) || rootComponent.contains(auxiliaryNode))
+					continue;
+				if (areConnected(auxiliaryNode, node))
+					rootComponent.add(auxiliaryNode);
+			}
+			if (finalRootComponents.contains(rootComponent)) {
+				log.info("--------------- EH VOLEVIIIIIIIIII ------------");
+				continue;
+			}
+			log.info("--------------- SUCCESSO findRootComp ------------");
+			return rootComponent;
+		}
+
+		log.info("findRootComp(): No root component found.");
+		return null;
+	}
+	
 //------------------------------------------------------------------------------
 
 	/*
@@ -1401,7 +1458,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		 * in A
 		 */
 		log.info("*** Calling dualAscent() ***");
-		BroadcastTree bt = dualAscent(copyOfLinkDpidMap, dst, linkCost, true);
+		BroadcastTree bt = dualAscent(copyOfLinkDpidMap, src, dst, linkCost, true);
 		log.info("*** dualAscent() returned ***");
 		/* add this initial tree as our archipelago's broadcast tree (aSrc == aDst) */
 		aSrc.setBroadcastTree(bt);
@@ -1464,7 +1521,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				// destination
 				log.info("*** Calling dualAscent() for spurPath ***");
 				Path spurPath = buildPath(new PathId(spurNode, dst),
-					dualAscent(copyOfLinkDpidMap, dst, linkCost, true));
+					dualAscent(copyOfLinkDpidMap, src, dst, linkCost, true));
 				log.info("*** dualAscent() for spurPath returned ***");
 				if (spurPath == null || spurPath.getPath().isEmpty()) {
 					log.info("spurPath is null");
