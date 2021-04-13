@@ -129,7 +129,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	        }
 	    }
 		public void remove(DatapathId node) {
-			for (Link link: this.getLinks(node)) {
+			if (!this.hasNode(node))
+				return;
+			for (Link link: this.getCopyLinks(node)) {
 				this.removeLink(link);
 			}
 			this.links.remove(node);
@@ -164,16 +166,21 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	        this.links.get(l.getDst()).remove(l);
 		}
 		
-		public Set<Entry<DatapathId, Set<Link>>> getTable() {
-			return this.links.entrySet();
-		}
-		
 	    public Set<DatapathId> getNodes() {
 	        return this.links.keySet();
 	    }
 	    
 	    public Set<DatapathId> getTargets() {
 	    	return this.targetNodes;
+	    }
+	    
+	    public Set<Link> getCopyLinks(DatapathId node) {
+	    	//TODO: Sostituire questo metodo con uno equivalente che permetta una modifica concorrente della struttura links
+	    	Set<Link> copyLinks = new HashSet<>();
+	    	for (Link link: this.getLinks(node)) {
+	    		copyLinks.add(link);
+	    	}
+	    	return copyLinks;
 	    }
 		
 		public Set<Link> getLinks(DatapathId node) {
@@ -874,7 +881,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			auxiliaryGraph.remove(node);
 		}
 		
-		BroadcastTree tree = buildBroadcastTree(target, linkCost, auxiliaryGraph, isDstRooted);
+		BroadcastTree tree = buildBroadcastTree(target, linkCost, auxiliaryGraph);
 
 		Integer cost = 0;
 		if (tree.getLinks().values() != null)
@@ -889,8 +896,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 	}
 
-	private BroadcastTree buildBroadcastTree(DatapathId root, Map<Link, Integer> linkCost,
-		Graph auxiliaryGraph, boolean isDstRooted)
+	private BroadcastTree buildBroadcastTree(DatapathId target, Map<Link, Integer> linkCost,
+		Graph auxiliaryGraph)
 	{
 		log.info("--- buildBroadcastTree() execution ---");
 		HashMap<DatapathId, Link> linksGrafoA = new HashMap<>();
@@ -904,8 +911,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			costsNodesGrafoA.put(node, MAX_PATH_WEIGHT);
 		}
 
-		nodeq.add(new NodeDist(root, 0));
-		costsNodesGrafoA.put(root, 0);
+		nodeq.add(new NodeDist(target, 0));
+		costsNodesGrafoA.put(target, 0);
 		if (auxiliaryGraph != null) //FIXME: it's always != null
 			while (nodeq.peek() != null) {
 				NodeDist n = nodeq.poll();
@@ -921,9 +928,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					continue;
 				log.info("SetLinks: {}", auxiliaryGraph.getLinks(node).toString());
 				for (Link link: auxiliaryGraph.getLinks(node)) {
-					DatapathId neighbor;
-
-					neighbor = (isDstRooted ? link.getSrc() : link.getDst());
+					DatapathId neighbor = link.getSrc();
 
 					// links directed toward node will result in this condition
 					if (neighbor.equals(node)) continue;
