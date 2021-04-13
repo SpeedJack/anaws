@@ -110,7 +110,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		/**
 		 * Wrapper class for the links available in a graph. It does not provide a deep copy.
 		 * It stores only the reference to the links variable.
-		 */	
+		 */
+		
+		//TODO: Considerare la possibilita' di aggiungere un insieme di nodi root verso il nodo target
 	    private Map<DatapathId, Set<Link>> links;
 	    private Set<DatapathId> targetNodes;
 	    private DatapathId root;
@@ -118,8 +120,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		public Graph() {
 			this(new HashMap<>());
 		}
-		public Graph(Map<DatapathId, Set<Link>> links) {
-			this.links = links;
+		public Graph(Map<DatapathId, Set<Link>> completeLinks) {
+			this.links = completeLinks;
 			this.targetNodes = new HashSet<>();
 		}
 		
@@ -161,10 +163,12 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	        this.links.get(l.getDst()).add(l);
 	     }
 		
+		
 		public void removeLink(Link l) {
 	        this.links.get(l.getSrc()).remove(l);
 	        this.links.get(l.getDst()).remove(l);
 		}
+
 		
 	    public Set<DatapathId> getNodes() {
 	        return this.links.keySet();
@@ -182,7 +186,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	    	}
 	    	return copyLinks;
 	    }
-		
+	    
 		public Set<Link> getLinks(DatapathId node) {
 			return this.links.get(node);
 		}
@@ -825,15 +829,19 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 	
 	protected BroadcastTree dualAscent(
-			Map<DatapathId, Set<Link>> links, 
-			DatapathId root, 
-			DatapathId target, 
+			Map<DatapathId, Set<Link>> links,
+			DatapathId src,
+			DatapathId dst,
 			Map<Link, Integer> linkCost,
 			boolean isDstRooted
 	) {
+		/**
+		 * @param isDstRooted: se true, significa che il BroadcastTree avrà come radice dell'albero la destinazione, mentre tutti gli altri nodi verso la destinazione
+		 */
+		
 		log.info("--- dualAscent() execution ---");
-		log.info("root: " + root.toString());
-		log.info("target: " + target.toString());
+		log.info("root: " + src.toString());
+		log.info("target: " + dst.toString());
 		log.info("links: " + links.toString());
 		// INIZIALIZZAZIONE STRUTTURE 
 		Graph completeGraph = new Graph(links);
@@ -847,9 +855,20 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		finalRootComponents.clear();
 		dualCost = 0;
 		// INSERIMENTO LINK E NODI NELLE STRUTTURE
-		auxiliaryGraph.setRoot(root);
-		auxiliaryGraph.addTarget(target);
+		//tutti gli archi vanno dal nodo root verso gli altri nodi
+		if (isDstRooted) {
+			// l'idea e' quella di usare il dual ascent per ottenere l'albero, ma poi ottenere quello speculare, dove tutti i link sono contrari
+			// Cosi' si ottiene un albero da tutti i nodi verso il nodo root, che e' il nodo dst
+			auxiliaryGraph.setRoot(dst); //start from dst to all other nodes		
+		}
+		else {
+			// l'idea è di applicare il normale dual ascent e ottenere un albero
+			auxiliaryGraph.setRoot(src); //start from src to all other nodes
+		}
 		for (DatapathId node: completeGraph.getNodes()) {
+			if (!node.equals(auxiliaryGraph.getRoot())) {
+				auxiliaryGraph.addTarget(node);
+			}
 			connections.put(node, new HashMap<DatapathId, Boolean>());
 			for (DatapathId internalNode: completeGraph.getNodes())
 				connections.get(node).put(internalNode, (node.equals(internalNode)));
@@ -858,8 +877,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					linkCost.put(link, 1);
 				reducedCost.put(link, linkCost.get(link));
 			}
-			auxiliaryGraph.add(node);
 		}
+		//TUTTI I NODI SONO O ROOT O TARGET
 		log.info("------- INIZIO ALGORITMO DUAL ASCENT ---------");
 		Set<DatapathId> rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		while (rootComponent != null) {
@@ -872,18 +891,42 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		}
 		log.info("------------- FINE ALGORITMO DUAL ASCENT ----------");
-		HashSet<DatapathId> toRemove = new HashSet<DatapathId>();
+		//TODO: Se non si vuole avere nodi ne' root ne' target, eliminare il for
 		for (DatapathId node: auxiliaryGraph.getNodes()) {
-			if (!areConnected(root, node)) {
-				toRemove.add(node);
+			if (!areConnected(auxiliaryGraph.getRoot(), node)) {
+				auxiliaryGraph.remove(node);
+			}
+		}	
+		
+		if (isDstRooted) {
+			//i nodi rimangono, ma i link devono essere invertiti
+			Map<DatapathId, Set<Link>> newLinks = new HashMap<>();
+			for (DatapathId node: auxiliaryGraph.getNodes()) {
+				newLinks.put(node, new HashSet<>());
+				for (Link directLink: auxiliaryGraph.getLinks(node)) {
+					//cerco nel grafo completo il link opposto
+					for (Link oppositeLink: completeGraph.getLinks(node)) {
+						DatapathId directSrc = directLink.getSrc();
+						DatapathId directDst = directLink.getDst();
+						DatapathId oppositeSrc = oppositeLink.getSrc();
+						DatapathId oppositeDst = oppositeLink.getDst();
+						if (directSrc.equals(oppositeDst) && directDst.equals(oppositeSrc)) {
+							newLinks.get(node).add(oppositeLink);
+						}
+					}
+				}
+			}
+			//adesso ho tutti i link opposti. Faccio pulizia di quelli presenti e aggiungo quelli nuovi
+			for (DatapathId node: auxiliaryGraph.getNodes()) {
+				auxiliaryGraph.getLinks(node).clear();
+				for (Link oppositeLink: newLinks.get(node)) {
+					//cerco nel grafo completo il link opposto
+					auxiliaryGraph.addLink(oppositeLink);
+				}
 			}
 		}
 		
-		for (DatapathId node: toRemove) {
-			auxiliaryGraph.remove(node);
-		}
-		
-		BroadcastTree tree = buildBroadcastTree(target, linkCost, auxiliaryGraph);
+		BroadcastTree tree = buildBroadcastTree(linkCost, auxiliaryGraph, isDstRooted);
 
 		Integer cost = 0;
 		if (tree.getLinks().values() != null)
@@ -898,8 +941,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 	}
 
-	private BroadcastTree buildBroadcastTree(DatapathId target, Map<Link, Integer> linkCost,
-		Graph auxiliaryGraph)
+	private BroadcastTree buildBroadcastTree(Map<Link, Integer> linkCost,
+		Graph auxiliaryGraph, boolean isDstRooted)
 	{
 		log.info("--- buildBroadcastTree() execution ---");
 		log.info("Final auxiliary graph: " + auxiliaryGraph.toString());
@@ -914,8 +957,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			costsNodesGrafoA.put(node, MAX_PATH_WEIGHT);
 		}
 
-		nodeq.add(new NodeDist(target, 0));
-		costsNodesGrafoA.put(target, 0);
+		nodeq.add(new NodeDist(auxiliaryGraph.getRoot(), 0));
+		costsNodesGrafoA.put(auxiliaryGraph.getRoot(), 0);
 		if (auxiliaryGraph != null) //FIXME: it's always != null
 			while (nodeq.peek() != null) {
 				NodeDist n = nodeq.poll();
@@ -929,7 +972,13 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				if (!auxiliaryGraph.hasNode(node))
 					continue;
 				for (Link link: auxiliaryGraph.getLinks(node)) {
-					DatapathId neighbor = link.getSrc();
+					DatapathId neighbor;
+					if (isDstRooted) {
+						neighbor = link.getSrc();
+					}
+					else {
+						neighbor = link.getDst();
+					}
 
 					// links directed toward node will result in this condition
 					if (neighbor.equals(node)) continue;
@@ -962,14 +1011,17 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	{
 		if (minLink != null) {
 			auxiliaryGraph.addLink(minLink);
+			DatapathId src = minLink.getSrc();
+			DatapathId dst = minLink.getDst();
 			for (DatapathId node1: auxiliaryGraph.getNodes()) {
 				for (DatapathId node2: auxiliaryGraph.getNodes()) {
-					if (areConnected(node1, minLink.getSrc()) &&
-						areConnected(minLink.getDst(), node2)) {
+					if (areConnected(node1, src) &&
+						areConnected(dst, node2)) {
 						connections.get(node1).put(node2, true);
 					}
 				}
 			}
+			//controllare connections
 		}
 	}
 
