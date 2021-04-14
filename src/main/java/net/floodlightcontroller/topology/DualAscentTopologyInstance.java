@@ -105,110 +105,139 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				return costLinkLeft.compareTo(costLinkRight);
 		}
 	};
-	
-	private class Graph{
+
+	private class Graph
+	{
 		/**
-		 * Wrapper class for the links available in a graph. It does not provide a deep copy.
-		 * It stores only the reference to the links variable.
+		 * Wrapper class for the links available in a graph. It does not provide a deep
+		 * copy. It stores only the reference to the links variable.
 		 */
-		
-		//TODO: Considerare la possibilita' di aggiungere un insieme di nodi root verso il nodo target
-	    private Map<DatapathId, Set<Link>> links;
-	    private Set<DatapathId> targetNodes;
-	    private DatapathId root;
-	    
-		public Graph() {
+
+		// TODO: Considerare la possibilita' di aggiungere un insieme di nodi root verso
+		// il nodo target
+		private Map<DatapathId, Set<Link>> links;
+		private Set<DatapathId> targetNodes;
+		private DatapathId root;
+
+		public Graph()
+		{
 			this(new HashMap<>());
 		}
-		public Graph(Map<DatapathId, Set<Link>> completeLinks) {
+
+		public Graph(Map<DatapathId, Set<Link>> completeLinks)
+		{
 			this.links = completeLinks;
 			this.targetNodes = new HashSet<>();
 		}
-		
-		public void add(DatapathId node) {
-	        if (!this.hasNode(node)) {
-	            this.links.put(node, new HashSet<Link>());
-	        }
-	    }
-		public void remove(DatapathId node) {
+
+		public void add(DatapathId node)
+		{
+			if (!this.hasNode(node)) {
+				this.links.put(node, new HashSet<Link>());
+			}
+		}
+
+		public void remove(DatapathId node)
+		{
 			if (!this.hasNode(node))
 				return;
-			for (Link link: this.getCopyLinks(node)) {
+			for (Link link : this.getCopyLinks(node)) {
 				this.removeLink(link);
 			}
 			this.links.remove(node);
 		}
-		
-		public void addTarget(DatapathId target) {
+
+		public void addTarget(DatapathId target)
+		{
 			this.add(target);
 			if (!this.hasTarget(target)) {
 				this.targetNodes.add(target);
-	        }
+			}
 		}
-		
-		public void setRoot(DatapathId root) {
+
+		public void setRoot(DatapathId root)
+		{
 			this.add(root);
 			this.root = root;
 		}
-		
-		public DatapathId getRoot() {
+
+		public DatapathId getRoot()
+		{
 			return this.root;
 		}
-		
-		public void addLink(Link l) {
-	        this.add(l.getSrc());
-	        this.links.get(l.getSrc()).add(l);
 
-	        this.add(l.getDst());
-	        this.links.get(l.getDst()).add(l);
-	     }
-		
-		
-		public void removeLink(Link l) {
-	        this.links.get(l.getSrc()).remove(l);
-	        this.links.get(l.getDst()).remove(l);
+		public void addLink(Link l)
+		{
+			this.add(l.getSrc());
+			this.links.get(l.getSrc()).add(l);
+
+			this.add(l.getDst());
+			this.links.get(l.getDst()).add(l);
 		}
 
-		
-	    public Set<DatapathId> getNodes() {
-	        return this.links.keySet();
-	    }
-	    
-	    public Set<DatapathId> getTargets() {
-	    	return this.targetNodes;
-	    }
-	    
-	    public Set<Link> getCopyLinks(DatapathId node) {
-	    	//TODO: Sostituire questo metodo con uno equivalente che permetta una modifica concorrente della struttura links
-	    	Set<Link> copyLinks = new HashSet<>();
-	    	for (Link link: this.getLinks(node)) {
-	    		copyLinks.add(link);
-	    	}
-	    	return copyLinks;
-	    }
-	    
-		public Set<Link> getLinks(DatapathId node) {
+		public void removeLink(Link l)
+		{
+			this.links.get(l.getSrc()).remove(l);
+			this.links.get(l.getDst()).remove(l);
+		}
+
+		public Set<DatapathId> getNodes()
+		{
+			return this.links.keySet();
+		}
+
+		public Iterator<DatapathId> getNodesIterator()
+		{
+			return this.links.keySet().iterator();
+		}
+
+		public Set<DatapathId> getTargets()
+		{
+			return this.targetNodes;
+		}
+
+		public Set<Link> getCopyLinks(DatapathId node)
+		{
+			// TODO: Sostituire questo metodo con uno equivalente che permetta una modifica
+			// concorrente della struttura links
+			Set<Link> copyLinks = new HashSet<>();
+			for (Link link : this.getLinks(node)) {
+				copyLinks.add(link);
+			}
+			return copyLinks;
+		}
+
+		public Set<Link> getLinks(DatapathId node)
+		{
 			return this.links.get(node);
 		}
-		
-		public boolean hasNode(DatapathId node) {
+
+		public Iterator<Map.Entry<DatapathId, Set<Link>>> getLinksIterator()
+		{
+			return this.links.entrySet().iterator();
+		}
+
+		public boolean hasNode(DatapathId node)
+		{
 			// TODO Auto-generated method stub
 			return this.links.containsKey(node);
 		}
-		
-		public boolean hasLink(DatapathId node, Link link) {
+
+		public boolean hasLink(DatapathId node, Link link)
+		{
 			return (this.hasNode(node) ? this.getLinks(node).contains(link) : false);
 		}
-		
-		public boolean hasTarget(DatapathId target) {
+
+		public boolean hasTarget(DatapathId target)
+		{
 			return this.targetNodes.contains(target);
 		}
-		
-		public String toString() {
-	        return "[Graph root: " + this.root.toString() +
-	        		", target: " + this.targetNodes.toString() +
-	        		", links: " + this.links.toString() + "]";
-	    }
+
+		public String toString()
+		{
+			return "[Graph root: " + this.root.toString() + ", target: " + this.targetNodes.toString() +
+				", links: " + this.links.toString() + "]";
+		}
 	}
 //------------------------------------------------------------------------------
 
@@ -224,24 +253,24 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		this.switches = new HashSet<DatapathId>(portsWithLinks.keySet());
 		this.portsWithLinks = new HashMap<DatapathId, Set<OFPort>>();
-		for (DatapathId sw: portsWithLinks.keySet())
+		for (DatapathId sw : portsWithLinks.keySet())
 			this.portsWithLinks.put(sw, new HashSet<OFPort>(portsWithLinks.get(sw)));
 
 		this.portsPerSwitch = new HashMap<DatapathId, Set<OFPort>>();
-		for (DatapathId sw: portsPerSwitch.keySet())
+		for (DatapathId sw : portsPerSwitch.keySet())
 			this.portsPerSwitch.put(sw, new HashSet<OFPort>(portsPerSwitch.get(sw)));
 
 		this.portsBlocked = new HashSet<NodePortTuple>(portsBlocked);
 		this.linksNonBcastNonTunnel = new HashMap<NodePortTuple, Set<Link>>();
-		for (NodePortTuple npt: linksNonBcastNonTunnel.keySet())
+		for (NodePortTuple npt : linksNonBcastNonTunnel.keySet())
 			this.linksNonBcastNonTunnel.put(npt, new HashSet<Link>(linksNonBcastNonTunnel.get(npt)));
 
 		this.links = new HashMap<NodePortTuple, Set<Link>>();
-		for (NodePortTuple npt: links.keySet())
+		for (NodePortTuple npt : links.keySet())
 			this.links.put(npt, new HashSet<Link>(links.get(npt)));
 
 		this.linksExternal = new HashMap<NodePortTuple, Set<Link>>();
-		for (NodePortTuple npt: linksExternal.keySet())
+		for (NodePortTuple npt : linksExternal.keySet())
 			this.linksExternal.put(npt, new HashSet<Link>(linksExternal.get(npt)));
 
 		this.linksNonExternalInterCluster = new HashSet<Link>();
@@ -333,7 +362,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			return Collections.emptySet();
 		} else {
 			if (log.isDebugEnabled())
-				log.debug("Found broadcast ports {} for switch {}", portsBroadcastPerSwitch.get(sw), sw);
+				log.debug("Found broadcast ports {} for switch {}", portsBroadcastPerSwitch.get(sw),
+					sw);
 			return portsBroadcastPerSwitch.get(sw);
 		}
 	}
@@ -352,14 +382,14 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 	private void identifyIntraClusterLinks()
 	{
-		for (DatapathId s: switches) {
+		for (DatapathId s : switches) {
 			if (portsWithLinks.get(s) == null)
 				continue;
-			for (OFPort p: portsWithLinks.get(s)) {
+			for (OFPort p : portsWithLinks.get(s)) {
 				NodePortTuple np = new NodePortTuple(s, p);
 				if (linksNonBcastNonTunnel.get(np) == null || isBroadcastPort(np))
 					continue;
-				for (Link l: linksNonBcastNonTunnel.get(np)) {
+				for (Link l : linksNonBcastNonTunnel.get(np)) {
 					if (isBlockedLink(l) || isBroadcastLink(l))
 						continue;
 					Cluster c1 = clusterFromSwitch.get(l.getSrc());
@@ -454,11 +484,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		// Traverse the graph through every outgoing link.
 		if (portsWithLinks.get(currSw) != null)
-			for (OFPort p: portsWithLinks.get(currSw)) {
+			for (OFPort p : portsWithLinks.get(currSw)) {
 				Set<Link> lset = linksNonBcastNonTunnel.get(new NodePortTuple(currSw, p));
 				if (lset == null)
 					continue;
-				for (Link l: lset) {
+				for (Link l : lset) {
 					DatapathId dstSw = l.getDst();
 
 					// ignore incoming links.
@@ -517,7 +547,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			// create a new switch cluster and the switches in the current
 			// set to the switch cluster.
 			Cluster sc = new Cluster();
-			for (DatapathId sw: currSet) {
+			for (DatapathId sw : currSet) {
 				sc.add(sw);
 				clusterFromSwitch.put(sw, sc);
 			}
@@ -655,7 +685,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		Archipelago dstArchipelago = null;
 		Set<Link> links = new HashSet<Link>();
 
-		for (Set<Link> linkset: linksExternal.values())
+		for (Set<Link> linkset : linksExternal.values())
 			links.addAll(linkset);
 		links.addAll(linksNonExternalInterCluster);
 
@@ -667,183 +697,94 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					archipelagos.add(a);
 					archipelagoFromCluster.put(c, a);
 				}
-		else /* Only for two or more adjacent clusters that form archipelagos */
-			for (Link l: links) {
-				for (Cluster c: clusters) {
-					if (c.getNodes().contains(l.getSrc()))
-						srcCluster = c;
-					if (c.getNodes().contains(l.getDst()))
-						dstCluster = c;
-				}
-				for (Archipelago a: archipelagos) {
-					// Is source cluster a part of an existing archipelago?
-					if (a.isMember(srcCluster))
-						srcArchipelago = a;
-					// Is destination cluster a part of an existing archipelago?
-					if (a.isMember(dstCluster))
-						dstArchipelago = a;
-				}
+			else /* Only for two or more adjacent clusters that form archipelagos */
+				for (Link l : links) {
+					for (Cluster c : clusters) {
+						if (c.getNodes().contains(l.getSrc()))
+							srcCluster = c;
+						if (c.getNodes().contains(l.getDst()))
+							dstCluster = c;
+					}
+					for (Archipelago a : archipelagos) {
+						// Is source cluster a part of an existing archipelago?
+						if (a.isMember(srcCluster))
+							srcArchipelago = a;
+						// Is destination cluster a part of an existing archipelago?
+						if (a.isMember(dstCluster))
+							dstArchipelago = a;
+					}
 
-				// Are they both found in an archipelago? If so, then merge the two.
-				if (srcArchipelago != null && dstArchipelago != null &&
-					!srcArchipelago.equals(dstArchipelago)) {
-					archipelagos.remove(srcArchipelago);
-					srcArchipelago.merge(dstArchipelago);
-					archipelagos.add(srcArchipelago);
-					archipelagos.remove(dstArchipelago);
-					archipelagoFromCluster.put(dstCluster, srcArchipelago);
-				}
-				// If neither were found in an existing, then form a new archipelago.
-				else if (srcArchipelago == null && dstArchipelago == null) {
-					Archipelago a = new Archipelago().add(srcCluster).add(dstCluster);
-					archipelagos.add(a);
-					archipelagoFromCluster.put(srcCluster, a);
-					archipelagoFromCluster.put(dstCluster, a);
-				}
-				// If only one is found in an existing, then add the one not found to the
-				// existing.
-				else if (srcArchipelago != null && dstArchipelago == null) {
-					archipelagos.remove(srcArchipelago);
-					srcArchipelago.add(dstCluster);
-					archipelagos.add(srcArchipelago);
-					archipelagoFromCluster.put(dstCluster, srcArchipelago);
-				}
-				else if (srcArchipelago == null && dstArchipelago != null) {
-					archipelagos.remove(dstArchipelago);
-					dstArchipelago.add(srcCluster);
-					archipelagos.add(dstArchipelago);
-					archipelagoFromCluster.put(srcCluster, dstArchipelago);
-				}
+					// Are they both found in an archipelago? If so, then merge the two.
+					if (srcArchipelago != null && dstArchipelago != null &&
+						!srcArchipelago.equals(dstArchipelago)) {
+						archipelagos.remove(srcArchipelago);
+						srcArchipelago.merge(dstArchipelago);
+						archipelagos.add(srcArchipelago);
+						archipelagos.remove(dstArchipelago);
+						archipelagoFromCluster.put(dstCluster, srcArchipelago);
+					}
+					// If neither were found in an existing, then form a new archipelago.
+					else if (srcArchipelago == null && dstArchipelago == null) {
+						Archipelago a = new Archipelago().add(srcCluster).add(dstCluster);
+						archipelagos.add(a);
+						archipelagoFromCluster.put(srcCluster, a);
+						archipelagoFromCluster.put(dstCluster, a);
+					}
+					// If only one is found in an existing, then add the one not found to the
+					// existing.
+					else if (srcArchipelago != null && dstArchipelago == null) {
+						archipelagos.remove(srcArchipelago);
+						srcArchipelago.add(dstCluster);
+						archipelagos.add(srcArchipelago);
+						archipelagoFromCluster.put(dstCluster, srcArchipelago);
+					} else if (srcArchipelago == null && dstArchipelago != null) {
+						archipelagos.remove(dstArchipelago);
+						dstArchipelago.add(srcCluster);
+						archipelagos.add(dstArchipelago);
+						archipelagoFromCluster.put(srcCluster, dstArchipelago);
+					}
 
-				srcCluster = null;
-				dstCluster = null;
-				srcArchipelago = null;
-				dstArchipelago = null;
-			}
+					srcCluster = null;
+					dstCluster = null;
+					srcArchipelago = null;
+					dstArchipelago = null;
+				}
 	}
-
-	/*
-	 * Dijkstra that calculates destination rooted trees over the entire topology.
-	 *
-	private BroadcastTree dijkstra(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
-		boolean isDstRooted)
-	{
-		HashMap<DatapathId, Link> nexthoplinks = new HashMap<DatapathId, Link>();
-		HashMap<DatapathId, Integer> cost = new HashMap<DatapathId, Integer>();
-		int w;
-
-		for (DatapathId node: links.keySet()) {
-			nexthoplinks.put(node, null);
-			cost.put(node, MAX_PATH_WEIGHT);
-			// log.debug("Added max cost to {}", node);
-		}
-
-		HashMap<DatapathId, Boolean> seen = new HashMap<DatapathId, Boolean>();
-		PriorityQueue<NodeDist> nodeq = new PriorityQueue<NodeDist>();
-		nodeq.add(new NodeDist(root, 0));
-		cost.put(root, 0);
-
-		// log.debug("{}", links);
-
-		while (nodeq.peek() != null) {
-			NodeDist n = nodeq.poll();
-			DatapathId cnode = n.getNode();
-			int cdist = n.getDist();
-
-			if (cdist >= MAX_PATH_WEIGHT)
-				break;
-			if (seen.containsKey(cnode))
-				continue;
-			seen.put(cnode, true);
-
-			// log.debug("cnode {} and links {}", cnode, links.get(cnode));
-			if (links.get(cnode) == null)
-				continue;
-			for (Link link: links.get(cnode)) {
-				DatapathId neighbor;
-
-				if (isDstRooted == true)
-					neighbor = link.getSrc();
-				else
-					neighbor = link.getDst();
-
-				// links directed toward cnode will result in this condition
-				if (neighbor.equals(cnode) || seen.containsKey(neighbor))
-					continue;
-
-				if (linkCost == null || linkCost.get(link) == null)
-					w = 1;
-				else
-					w = linkCost.get(link);
-
-				int ndist = cdist + w; // the weight of the link, always 1 in current version of
-							// floodlight.
-				log.debug("Neighbor: {}", neighbor);
-				log.debug("Cost: {}", cost);
-				log.debug("Neighbor cost: {}", cost.get(neighbor));
- 
-				if (ndist < cost.get(neighbor)) {
-					cost.put(neighbor, ndist);
-					nexthoplinks.put(neighbor, link);
-
-					NodeDist ndTemp = new NodeDist(neighbor, ndist);
-					// Remove an object that's already in there.
-					// Note that the comparison is based on only the node id,
-					// and not node id and distance.
-					nodeq.remove(ndTemp);
-					// add the current object to the queue.
-					nodeq.add(ndTemp);
-				}
-			}
-		}
-
-		BroadcastTree ret = new BroadcastTree(nexthoplinks, cost);
-
-		return ret;
-	}*/
 
 //------------------------------------------------------------------------------
 	private boolean areConnected(DatapathId node1, DatapathId node2)
 	{
 		/*
-		log.info("-- node1 = " + (node1 != null ? "not" : "") + " null , node2 = " + (node2 != null ? "not" : "") + " null --");
-		if (node1 != null) {
-			log.info("node1 string: " + node1.toString());
-		}
-		if (node2 != null) {
-			log.info("node2 string: " + node2.toString());
-		}
-		log.info("connections: " + connections.toString());
-		*/
+		 * log.info("-- node1 = " + (node1 != null ? "not" : "") + " null , node2 = " +
+		 * (node2 != null ? "not" : "") + " null --"); if (node1 != null) {
+		 * log.info("node1 string: " + node1.toString()); } if (node2 != null) {
+		 * log.info("node2 string: " + node2.toString()); } log.info("connections: " +
+		 * connections.toString());
+		 */
 		if (!connections.containsKey(node1)) {
 			return false;
 		}
 		if (!connections.get(node1).containsKey(node2)) {
 			return false;
 		}
-		
+
 		return connections.get(node1).get(node2);
 	}
 
-	
-
-	
-	protected BroadcastTree dualAscent(
-			Map<DatapathId, Set<Link>> links,
-			DatapathId src,
-			DatapathId dst,
-			Map<Link, Integer> linkCost,
-			boolean isDstRooted
-	) {
+	protected BroadcastTree dualAscent(Map<DatapathId, Set<Link>> links, DatapathId src, DatapathId dst,
+		Map<Link, Integer> linkCost, boolean isDstRooted)
+	{
 		/**
-		 * @param isDstRooted: se true, significa che il BroadcastTree avrà come radice dell'albero la destinazione, mentre tutti gli altri nodi verso la destinazione
+		 * @param isDstRooted: se true, significa che il BroadcastTree avrà come radice
+		 *                     dell'albero la destinazione, mentre tutti gli altri nodi
+		 *                     verso la destinazione
 		 */
-		
+
 		log.info("--- dualAscent() execution ---");
 		log.info("root: " + src.toString());
 		log.info("target: " + dst.toString());
 		log.info("links: " + links.toString());
-		// INIZIALIZZAZIONE STRUTTURE 
+		// INIZIALIZZAZIONE STRUTTURE
 		Graph completeGraph = new Graph(links);
 		Graph auxiliaryGraph = new Graph();
 		connections = new HashMap<>();
@@ -855,30 +796,32 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		finalRootComponents.clear();
 		dualCost = 0;
 		// INSERIMENTO LINK E NODI NELLE STRUTTURE
-		//tutti gli archi vanno dal nodo root verso gli altri nodi
+		// tutti gli archi vanno dal nodo root verso gli altri nodi
 		if (isDstRooted) {
-			// l'idea e' quella di usare il dual ascent per ottenere l'albero, ma poi ottenere quello speculare, dove tutti i link sono contrari
-			// Cosi' si ottiene un albero da tutti i nodi verso il nodo root, che e' il nodo dst
-			auxiliaryGraph.setRoot(dst); //start from dst to all other nodes		
-		}
-		else {
+			// l'idea e' quella di usare il dual ascent per ottenere l'albero, ma poi
+			// ottenere quello speculare, dove tutti i link sono contrari
+			// Cosi' si ottiene un albero da tutti i nodi verso il nodo root, che e' il nodo
+			// dst
+			auxiliaryGraph.setRoot(dst); // start from dst to all other nodes
+		} else {
 			// l'idea è di applicare il normale dual ascent e ottenere un albero
-			auxiliaryGraph.setRoot(src); //start from src to all other nodes
+			auxiliaryGraph.setRoot(src); // start from src to all other nodes
 		}
-		for (DatapathId node: completeGraph.getNodes()) {
+		auxiliaryGraph.addTarget(src);
+		for (DatapathId node : completeGraph.getNodes()) {
 			if (!node.equals(auxiliaryGraph.getRoot())) {
 				auxiliaryGraph.addTarget(node);
 			}
 			connections.put(node, new HashMap<DatapathId, Boolean>());
-			for (DatapathId internalNode: completeGraph.getNodes())
+			for (DatapathId internalNode : completeGraph.getNodes())
 				connections.get(node).put(internalNode, (node.equals(internalNode)));
-			for (Link link: completeGraph.getLinks(node)) {
+			for (Link link : completeGraph.getLinks(node)) {
 				if (linkCost.get(link) == null)
 					linkCost.put(link, 1);
 				reducedCost.put(link, linkCost.get(link));
 			}
 		}
-		//TUTTI I NODI SONO O ROOT O TARGET
+		// TUTTI I NODI SONO O ROOT O TARGET
 		log.info("------- INIZIO ALGORITMO DUAL ASCENT ---------");
 		Set<DatapathId> rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		while (rootComponent != null) {
@@ -891,21 +834,24 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			rootComponent = findRootComp(completeGraph, auxiliaryGraph);
 		}
 		log.info("------------- FINE ALGORITMO DUAL ASCENT ----------");
-		//TODO: Se non si vuole avere nodi ne' root ne' target, eliminare il for
-		for (DatapathId node: auxiliaryGraph.getNodes()) {
+		// TODO: Se non si vuole avere nodi ne' root ne' target, eliminare il for
+		/*Iterator<Map.Entry<DatapathId, Set<Link>>> iter = auxiliaryGraph.getLinksIterator();
+		while (iter.hasNext()) {
+			Map.Entry<DatapathId, Set<Link>> entry = iter.next();
+			DatapathId node = entry.getKey();
 			if (!areConnected(auxiliaryGraph.getRoot(), node)) {
-				auxiliaryGraph.remove(node);
+				iter.remove();
 			}
-		}	
-		
+		}*/
+
 		if (isDstRooted) {
-			//i nodi rimangono, ma i link devono essere invertiti
+			// i nodi rimangono, ma i link devono essere invertiti
 			Map<DatapathId, Set<Link>> newLinks = new HashMap<>();
-			for (DatapathId node: auxiliaryGraph.getNodes()) {
+			for (DatapathId node : auxiliaryGraph.getNodes()) {
 				newLinks.put(node, new HashSet<>());
-				for (Link directLink: auxiliaryGraph.getLinks(node)) {
-					//cerco nel grafo completo il link opposto
-					for (Link oppositeLink: completeGraph.getLinks(node)) {
+				for (Link directLink : auxiliaryGraph.getLinks(node)) {
+					// cerco nel grafo completo il link opposto
+					for (Link oppositeLink : completeGraph.getLinks(node)) {
 						DatapathId directSrc = directLink.getSrc();
 						DatapathId directDst = directLink.getDst();
 						DatapathId oppositeSrc = oppositeLink.getSrc();
@@ -916,21 +862,22 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					}
 				}
 			}
-			//adesso ho tutti i link opposti. Faccio pulizia di quelli presenti e aggiungo quelli nuovi
-			for (DatapathId node: auxiliaryGraph.getNodes()) {
+			// adesso ho tutti i link opposti. Faccio pulizia di quelli presenti e aggiungo
+			// quelli nuovi
+			for (DatapathId node : auxiliaryGraph.getNodes()) {
 				auxiliaryGraph.getLinks(node).clear();
-				for (Link oppositeLink: newLinks.get(node)) {
-					//cerco nel grafo completo il link opposto
+				for (Link oppositeLink : newLinks.get(node)) {
+					// cerco nel grafo completo il link opposto
 					auxiliaryGraph.addLink(oppositeLink);
 				}
 			}
 		}
-		
+
 		BroadcastTree tree = buildBroadcastTree(linkCost, auxiliaryGraph, isDstRooted);
 
 		Integer cost = 0;
 		if (tree.getLinks().values() != null)
-			for (Link link: tree.getLinks().values())
+			for (Link link : tree.getLinks().values())
 				if (link != null)
 					cost += linkCost.get(link);
 				else
@@ -941,8 +888,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 	}
 
-	private BroadcastTree buildBroadcastTree(Map<Link, Integer> linkCost,
-		Graph auxiliaryGraph, boolean isDstRooted)
+	private BroadcastTree buildBroadcastTree(Map<Link, Integer> linkCost, Graph auxiliaryGraph, boolean isDstRooted)
 	{
 		log.info("--- buildBroadcastTree() execution ---");
 		log.info("Final auxiliary graph: " + auxiliaryGraph.toString());
@@ -952,38 +898,41 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		HashSet<DatapathId> nodiVisti = new HashSet<>();
 		PriorityQueue<NodeDist> nodeq = new PriorityQueue<NodeDist>();
 
-		for (DatapathId node: auxiliaryGraph.getNodes()) {
+		for (DatapathId node : auxiliaryGraph.getNodes()) {
 			linksGrafoA.put(node, null);
 			costsNodesGrafoA.put(node, MAX_PATH_WEIGHT);
 		}
 
 		nodeq.add(new NodeDist(auxiliaryGraph.getRoot(), 0));
 		costsNodesGrafoA.put(auxiliaryGraph.getRoot(), 0);
-		if (auxiliaryGraph != null) //FIXME: it's always != null
+		if (auxiliaryGraph != null) // FIXME: it's always != null
 			while (nodeq.peek() != null) {
 				NodeDist n = nodeq.poll();
 				DatapathId node = n.getNode();
 				int cdist = n.getDist();
-				if (cdist >= MAX_PATH_WEIGHT) break;
-				if (nodiVisti.contains(node)) continue;
+				if (cdist >= MAX_PATH_WEIGHT)
+					break;
+				if (nodiVisti.contains(node))
+					continue;
 				nodiVisti.add(node);
 
 				log.info("DJ Node: {}", node.toString());
 				if (!auxiliaryGraph.hasNode(node))
 					continue;
-				for (Link link: auxiliaryGraph.getLinks(node)) {
+				for (Link link : auxiliaryGraph.getLinks(node)) {
 					DatapathId neighbor;
 					if (isDstRooted) {
 						neighbor = link.getSrc();
-					}
-					else {
+					} else {
 						neighbor = link.getDst();
 					}
 
 					// links directed toward node will result in this condition
-					if (neighbor.equals(node)) continue;
+					if (neighbor.equals(node))
+						continue;
 
-					if (nodiVisti.contains(neighbor)) continue;
+					if (nodiVisti.contains(neighbor))
+						continue;
 
 					costLink = linkCost.get(link);
 					// the weight of the link, always 1 in current version of floodlight.
@@ -1013,15 +962,14 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			auxiliaryGraph.addLink(minLink);
 			DatapathId src = minLink.getSrc();
 			DatapathId dst = minLink.getDst();
-			for (DatapathId node1: auxiliaryGraph.getNodes()) {
-				for (DatapathId node2: auxiliaryGraph.getNodes()) {
-					if (areConnected(node1, src) &&
-						areConnected(dst, node2)) {
+			for (DatapathId node1 : auxiliaryGraph.getNodes()) {
+				for (DatapathId node2 : auxiliaryGraph.getNodes()) {
+					if (areConnected(node1, src) && areConnected(dst, node2)) {
 						connections.get(node1).put(node2, true);
 					}
 				}
 			}
-			//controllare connections
+			// controllare connections
 		}
 	}
 
@@ -1035,11 +983,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			return;
 		dualCost += minCost;
 		finalCut.put(rootComponent, minCost);
-		for (DatapathId node: rootComponent) {
+		for (DatapathId node : rootComponent) {
 			Set<Link> nodeLinks = completeGraph.getLinks(node);
 			if (nodeLinks == null)
 				continue;
-			for (Link ingressLink: nodeLinks) {
+			for (Link ingressLink : nodeLinks) {
 				if (node.equals(ingressLink.getDst())) {
 					if (rootComponent.contains(ingressLink.getSrc()))
 						continue;
@@ -1054,11 +1002,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	}
 
 	private Link findMinArc(Set<DatapathId> rootComponent, Graph completeGraph, Graph auxiliaryGraph)
-	{	
+	{
 		log.info("--------------- DENTRO findMinArc  ------------");
 		Link minLink = null;
-		for (DatapathId node: rootComponent) {
-			for (Link link: completeGraph.getLinks(node)) {
+		for (DatapathId node : rootComponent) {
+			for (Link link : completeGraph.getLinks(node)) {
 				if (node.equals(link.getDst())) {
 					if (auxiliaryGraph.hasLink(node, link))
 						continue;
@@ -1071,14 +1019,12 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 		if (minLink == null) {
 			log.info("--------------- FINE findMinArc ------------");
-		}
-		else {
+		} else {
 			log.info("--------------- SUCCESSO findMinArc -----------");
-		}	
+		}
 		return minLink;
 	}
-	
-	
+
 	private HashSet<DatapathId> findRootComp(Graph completeGraph, Graph auxiliaryGraph)
 	{
 		log.info("--------------- DENTRO findRootComp ------------");
@@ -1092,7 +1038,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			return null;
 		}
 		DatapathId root = auxiliaryGraph.getRoot();
-		externCycle: for (DatapathId node: auxiliaryGraph.getTargets()) {
+		externCycle: for (DatapathId node : auxiliaryGraph.getTargets()) {
 			rootComponent.clear();
 			if (node.equals(root))
 				continue;
@@ -1100,7 +1046,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				continue;
 			rootComponent.add(node);
 			// Same reasoning as above is applied here
-			for (DatapathId otherNode: auxiliaryGraph.getTargets()) {
+			for (DatapathId otherNode : auxiliaryGraph.getTargets()) {
 				if (otherNode.equals(root) || otherNode.equals(node))
 					continue;
 				boolean con21 = areConnected(otherNode, node);
@@ -1111,7 +1057,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					continue;
 				rootComponent.add(otherNode);
 			}
-			for (DatapathId auxiliaryNode: auxiliaryGraph.getNodes()) {
+			for (DatapathId auxiliaryNode : auxiliaryGraph.getNodes()) {
 				if (auxiliaryNode.equals(root) || rootComponent.contains(auxiliaryNode))
 					continue;
 				if (areConnected(auxiliaryNode, node))
@@ -1128,7 +1074,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("findRootComp(): No root component found.");
 		return null;
 	}
-	
+
 //------------------------------------------------------------------------------
 
 	/*
@@ -1142,7 +1088,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		switch (DualAscentTopologyManager.getPathMetricInternal()) {
 		case HOPCOUNT_AVOID_TUNNELS:
 			log.info("Using hop count with tunnel bias for metrics");
-			for (NodePortTuple npt: portsTunnel) {
+			for (NodePortTuple npt : portsTunnel) {
 				if (links.get(npt) == null)
 					continue;
 				for (Link link : links.get(npt)) {
@@ -1154,10 +1100,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			return linkCost;
 		case HOPCOUNT:
 			log.info("Using hop count w/o tunnel bias for metrics");
-			for (NodePortTuple npt: links.keySet()) {
+			for (NodePortTuple npt : links.keySet()) {
 				if (links.get(npt) == null)
 					continue;
-				for (Link link: links.get(npt)) {
+				for (Link link : links.get(npt)) {
 					if (link == null)
 						continue;
 					linkCost.put(link, 1);
@@ -1167,10 +1113,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		case LATENCY:
 			log.info("Using latency for path metrics");
-			for (NodePortTuple npt: links.keySet()) {
+			for (NodePortTuple npt : links.keySet()) {
 				if (links.get(npt) == null)
 					continue;
-				for (Link link: links.get(npt)) {
+				for (Link link : links.get(npt)) {
 					if (link == null)
 						continue;
 					if ((int)link.getLatency().getValue() < 0 ||
@@ -1185,7 +1131,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		case LINK_SPEED:
 			DualAscentTopologyManager.statisticsService.collectStatistics(true);
 			log.info("Using link speed for path metrics");
-			for (NodePortTuple npt: links.keySet()) {
+			for (NodePortTuple npt : links.keySet()) {
 				if (links.get(npt) == null)
 					continue;
 				long rawLinkSpeed = 0;
@@ -1195,7 +1141,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 					if (p != null)
 						rawLinkSpeed = p.getCurrSpeed();
 				}
-				for (Link link: links.get(npt)) {
+				for (Link link : links.get(npt)) {
 					if (link == null)
 						continue;
 
@@ -1212,7 +1158,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		case UTILIZATION:
 			DualAscentTopologyManager.statisticsService.collectStatistics(true);
 			log.info("Using utilization for path metrics");
-			for (NodePortTuple npt: links.keySet()) {
+			for (NodePortTuple npt : links.keySet()) {
 				if (links.get(npt) == null)
 					continue;
 				SwitchPortBandwidth spb = DualAscentTopologyManager.statisticsService
@@ -1220,7 +1166,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				long bpsTx = 0;
 				if (spb != null)
 					bpsTx = spb.getBitsPerSecondTx().getValue();
-				for (Link link: links.get(npt)) {
+				for (Link link : links.get(npt)) {
 					if (link == null)
 						continue;
 
@@ -1236,14 +1182,13 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		case CUSTOM:
 			log.info("Questa e' la nostra metrica!!!");
-			for (NodePortTuple npt: portsTunnel) {
+			for (NodePortTuple npt : portsTunnel) {
 				if (links.get(npt) == null)
 					continue;
 				IOFSwitch s = DualAscentTopologyManager.switchService.getSwitch(npt.getNodeId());
 				if (s != null) {
 					tunnel_weight = s.getPorts().size();
-				}
-				else {
+				} else {
 					log.info("s sta a null");
 					tunnel_weight = 1;
 				}
@@ -1255,10 +1200,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				}
 			}
 			return linkCost;
-			
+
 		default:
 			log.info("Invalid Selection: Using Default Hop Count with Tunnel Bias for Metrics");
-			for (NodePortTuple npt: portsTunnel) {
+			for (NodePortTuple npt : portsTunnel) {
 				if (links.get(npt) == null)
 					continue;
 				for (Link link : links.get(npt)) {
@@ -1268,7 +1213,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				}
 			}
 			return linkCost;
-			
+
 		}
 	}
 
@@ -1282,19 +1227,20 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		PathId pathId;
 		pathcache.clear();
 
-		for (Archipelago a: archipelagos) { /* for each archipelago */
+		for (Archipelago a : archipelagos) { /* for each archipelago */
 			Set<DatapathId> srcSws = a.getSwitches();
 			Set<DatapathId> dstSws = a.getSwitches();
 			log.debug("SRC {}", srcSws);
 			log.debug("DST {}", dstSws);
 
-			for (DatapathId src: srcSws) /* permute all member switches */
-				for (DatapathId dst: dstSws) {
-					log.debug("Calling Yens {} {}", src, dst);
-					paths = yens(src, dst, DualAscentTopologyManager.getMaxPathsToComputeInternal(), a, a);
+			for (DatapathId src : srcSws) /* permute all member switches */
+				for (DatapathId dst : dstSws) {
+					log.info("!!! Calling Yens {} {}", src, dst);
+					paths = yens(src, dst, DualAscentTopologyManager.getMaxPathsToComputeInternal(),
+						a, a);
 					pathId = new PathId(src, dst);
 					pathcache.put(pathId, paths);
-					log.debug("Adding paths {}", paths);
+					log.info("!!! Adding paths {}", paths);
 				}
 		}
 	}
@@ -1316,10 +1262,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			// This is a switch that is not connected to any other switch
 			// hence there was no update for links (and hence it is not
 			// in the network)
-			log.debug("buildpath: Standalone switch: {}", srcId);
+			log.warn("buildpath: Standalone switch: {}", srcId);
 
-			// The only possible non-null path for this case is
-			// if srcId equals dstId --- and that too is an 'empty' path []
+		// The only possible non-null path for this case is
+		// if srcId equals dstId --- and that too is an 'empty' path []
 
 		else if ((nexthoplinks != null) && (nexthoplinks.get(srcId) != null))
 			while (!srcId.equals(dstId)) {
@@ -1513,8 +1459,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		/*
-		 * Use Dual Ascent algorithm to find the shortest path, which will also be the first path
-		 * in A
+		 * Use Dual Ascent algorithm to find the shortest path, which will also be the
+		 * first path in A
 		 */
 		log.info("*** Calling dualAscent() ***");
 		BroadcastTree bt = dualAscent(copyOfLinkDpidMap, src, dst, linkCost, true);
@@ -1559,7 +1505,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				// Remove the links after the spur node that are part of other paths in A so
 				// that new paths
 				// found are unique
-				for (Path r: A)
+				for (Path r : A)
 					if (r.getPath().size() > (i + 1) &&
 						r.getPath().subList(0, i).equals(rootPath.getPath())) {
 						allLinksCopy.remove(r.getPath().get(i));
@@ -1576,7 +1522,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				// Builds the new topology without the parts we want removed
 				copyOfLinkDpidMap = buildLinkDpidMap(switchesCopy, portsWithLinks, allLinksCopy);
 
-				// Uses Dual Ascent algorithm to try to find a shortest path from the spur node to the
+				// Uses Dual Ascent algorithm to try to find a shortest path from the spur node
+				// to the
 				// destination
 				log.info("*** Calling dualAscent() for spurPath ***");
 				Path spurPath = buildPath(new PathId(spurNode, dst),
@@ -1600,8 +1547,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				log.info("Total Path: {}", totalPath);
 				// Adds the new path into B
 				int flag = 0;
-				for (Path r_B: B)
-					for (Path r_A: A)
+				for (Path r_B : B)
+					for (Path r_A : A)
 						if (r_B.getPath().equals(totalPath.getPath()) ||
 							r_A.getPath().equals(totalPath.getPath()))
 							flag = 1;
@@ -1621,12 +1568,12 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			log.info("Removing shortest path from {}", B);
 			// Find the shortest path in B, remove it, and put it in A
 			log.info("--------------BEFORE------------------------");
-			for (Path r: B)
+			for (Path r : B)
 				log.info(r.toString());
 			log.info("--------------------------------------------");
 			Path shortestPath = removeShortestPath(B, linkCost);
 			log.info("--------------AFTER------------------------");
-			for (Path r: B)
+			for (Path r : B)
 				log.info(r.toString());
 			log.info("--------------------------------------------");
 
@@ -1640,7 +1587,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		// Set the route counts
-		for (Path path: A)
+		for (Path path : A)
 			path.setPathIndex(A.indexOf(path));
 		log.info("END OF YEN'S --------------------");
 		return A;
@@ -1659,7 +1606,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		Integer shortestPathCost = Integer.MAX_VALUE;
 
 		// Iterate through B and find the shortest path
-		for (Path r: routes) {
+		for (Path r : routes) {
 			Integer pathCost = 0;
 			// Add up the weights of each link in the path
 			// TODO Get the path cost from the route object
@@ -1881,9 +1828,9 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	private void computeBroadcastPortsPerArchipelago()
 	{
 		Set<NodePortTuple> s;
-		for (Archipelago a: archipelagos) {
+		for (Archipelago a : archipelagos) {
 			s = new HashSet<NodePortTuple>();
-			for (Entry<DatapathId, Link> e: a.getBroadcastTree().getLinks().entrySet()) {
+			for (Entry<DatapathId, Link> e : a.getBroadcastTree().getLinks().entrySet()) {
 				Link l = e.getValue();
 				if (l != null) { /* null indicates root node (leads nowhere "up") */
 					NodePortTuple src = new NodePortTuple(l.getSrc(), l.getSrcPort());
@@ -1908,8 +1855,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		/* Add ports that hosts connect to */
-		for (DatapathId sw: this.switches)
-			for (OFPort p: this.portsPerSwitch.get(sw)) { /* includes edge and link ports */
+		for (DatapathId sw : this.switches)
+			for (OFPort p : this.portsPerSwitch.get(sw)) { /* includes edge and link ports */
 				NodePortTuple npt = new NodePortTuple(sw, p);
 				if (isEdge(sw, p)) {
 					/* Add to per-archipelago NPT map */

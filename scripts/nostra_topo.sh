@@ -10,5 +10,5 @@ sudo mn \
 --custom nostra-topo.py \
 --topo tower \
 --mac \
---switch ovsk \
---controller remote,ip=$CONTROLLERIP,port=6653,protocols='OpenFlow15'
+--switch ovs,protocols=OpenFlow13 \
+--controller remote,ip=$CONTROLLERIP,port=6653,protocols='OpenFlow13'

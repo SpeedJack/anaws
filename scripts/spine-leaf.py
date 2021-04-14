@@ -8,7 +8,7 @@ class Tower( Topo ):
     "Internet Topology Zoo Specimen."
 
     def addSwitch( self, name, **opts ):
-        kwargs = { 'protocols' : 'OpenFlow15' }
+        kwargs = { 'protocols' : 'OpenFlow14' }
         kwargs.update( opts )
         return super(Tower, self).addSwitch( name, **kwargs )
 
