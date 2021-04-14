@@ -807,7 +807,6 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			// l'idea è di applicare il normale dual ascent e ottenere un albero
 			auxiliaryGraph.setRoot(src); // start from src to all other nodes
 		}
-		auxiliaryGraph.addTarget(src);
 		for (DatapathId node : completeGraph.getNodes()) {
 			if (!node.equals(auxiliaryGraph.getRoot())) {
 				auxiliaryGraph.addTarget(node);
@@ -835,14 +834,16 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 		log.info("------------- FINE ALGORITMO DUAL ASCENT ----------");
 		// TODO: Se non si vuole avere nodi ne' root ne' target, eliminare il for
-		/*Iterator<Map.Entry<DatapathId, Set<Link>>> iter = auxiliaryGraph.getLinksIterator();
-		while (iter.hasNext()) {
-			Map.Entry<DatapathId, Set<Link>> entry = iter.next();
-			DatapathId node = entry.getKey();
-			if (!areConnected(auxiliaryGraph.getRoot(), node)) {
-				iter.remove();
-			}
-		}*/
+		
+		HashSet<DatapathId> toRemove = new HashSet<>();
+		for (DatapathId node : auxiliaryGraph.getNodes()) {
+			if (!areConnected(auxiliaryGraph.getRoot(), node))
+				toRemove.add(node);
+		}
+		for (DatapathId node : toRemove) {
+			log.info("Sto rimuovendo un nodo: {}", node);
+			auxiliaryGraph.remove(node);
+		}
 
 		if (isDstRooted) {
 			// i nodi rimangono, ma i link devono essere invertiti
@@ -917,8 +918,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				nodiVisti.add(node);
 
 				log.info("DJ Node: {}", node.toString());
+				/*
 				if (!auxiliaryGraph.hasNode(node))
 					continue;
+				*/
 				for (Link link : auxiliaryGraph.getLinks(node)) {
 					DatapathId neighbor;
 					if (isDstRooted) {
