@@ -65,13 +65,15 @@ public class JythonServer extends Thread {
             p.set(name, this.locals.get(name));
         }
 
-        URL jarUrl = JythonServer.class.getProtectionDomain().getCodeSource().getLocation();
+        /*URL jarUrl = JythonServer.class.getProtectionDomain().getCodeSource().getLocation();
         String jarPath = jarUrl.getPath();
         if (jarUrl.getProtocol().equals("file")) {
             // If URL is of type file, assume that we are in dev env and set path to python dir.
             // else use the jar file as is
-            jarPath = jarPath + "../../src/main/python/";
-        }
+            jarPath = jarPath + "../src/main/python/";
+        }*/
+	// Above code is bugged. For out dev setup, this hardcoded string is ok
+	String jarPath = "/usr/src/myapp/src/main/python/";
 
         p.exec("import sys");
         p.exec("sys.path.append('" + jarPath + "')");
