@@ -1,0 +1,37 @@
+version: "3.4"
+
+services:
+  floodlight:
+    build: ./fl/
+    container_name: fl
+    networks:
+      - flmnnet
+    volumes:
+      - ../:/usr/src/myapp/
+      - fl-m2:/root/.m2
+    ports:
+      - "8080:8080"
+      - "1044:1044"
+  mininet:
+    build: ./mn/
+    container_name: mn
+    networks:
+      - flmnnet
+    links:
+      - "floodlight"
+    depends_on:
+      - floodlight
+    tty: true
+    privileged: true
+    volumes:
+      - ../scripts/:/root/scripts/
+      - /lib/modules:/lib/modules
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      - DISPLAY
+
+volumes:
+  fl-m2: {}
+
+networks:
+  flmnnet:
