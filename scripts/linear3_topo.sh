@@ -8,6 +8,6 @@ fi
 
 sudo mn --topo linear,3 \
 --mac \
---switch ovs,protocols=OpenFlow14 \
---controller remote,ip=$CONTROLLERIP,port=6653,protocols='OpenFlow14' \
+--switch ovs,protocols=OpenFlow13 \
+--controller remote,ip=$CONTROLLERIP,port=6653,protocols='OpenFlow13' \
 --ipbase=10.0.0.0

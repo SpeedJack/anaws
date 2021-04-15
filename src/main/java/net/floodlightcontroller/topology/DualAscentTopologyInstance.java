@@ -377,6 +377,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		log.info("Broadcast Ports Per Node (!!): {}", portsBroadcastPerSwitch);
 		log.info("3+ Link Ports: {}", portsWithMoreThanTwoLinks);
 		log.info("Archipelagos: {}", archipelagos);
+		for (Archipelago a: archipelagos)
+			log.info("Archipelago {} broadcast tree: {}", a.getId(), a.getBroadcastTree());
 		log.info("-----------------------------------------------");
 	}
 
@@ -690,65 +692,66 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		links.addAll(linksNonExternalInterCluster);
 
 		/* Base case of 1:1 mapping b/t clusters and archipelagos */
-		if (links.isEmpty())
+		if (links.isEmpty()) {
 			if (!clusters.isEmpty())
 				for (Cluster c : clusters) {
 					Archipelago a = new Archipelago().add(c);
 					archipelagos.add(a);
 					archipelagoFromCluster.put(c, a);
 				}
-			else /* Only for two or more adjacent clusters that form archipelagos */
-				for (Link l : links) {
-					for (Cluster c : clusters) {
-						if (c.getNodes().contains(l.getSrc()))
-							srcCluster = c;
-						if (c.getNodes().contains(l.getDst()))
-							dstCluster = c;
-					}
-					for (Archipelago a : archipelagos) {
-						// Is source cluster a part of an existing archipelago?
-						if (a.isMember(srcCluster))
-							srcArchipelago = a;
-						// Is destination cluster a part of an existing archipelago?
-						if (a.isMember(dstCluster))
-							dstArchipelago = a;
-					}
-
-					// Are they both found in an archipelago? If so, then merge the two.
-					if (srcArchipelago != null && dstArchipelago != null &&
-						!srcArchipelago.equals(dstArchipelago)) {
-						archipelagos.remove(srcArchipelago);
-						srcArchipelago.merge(dstArchipelago);
-						archipelagos.add(srcArchipelago);
-						archipelagos.remove(dstArchipelago);
-						archipelagoFromCluster.put(dstCluster, srcArchipelago);
-					}
-					// If neither were found in an existing, then form a new archipelago.
-					else if (srcArchipelago == null && dstArchipelago == null) {
-						Archipelago a = new Archipelago().add(srcCluster).add(dstCluster);
-						archipelagos.add(a);
-						archipelagoFromCluster.put(srcCluster, a);
-						archipelagoFromCluster.put(dstCluster, a);
-					}
-					// If only one is found in an existing, then add the one not found to the
-					// existing.
-					else if (srcArchipelago != null && dstArchipelago == null) {
-						archipelagos.remove(srcArchipelago);
-						srcArchipelago.add(dstCluster);
-						archipelagos.add(srcArchipelago);
-						archipelagoFromCluster.put(dstCluster, srcArchipelago);
-					} else if (srcArchipelago == null && dstArchipelago != null) {
-						archipelagos.remove(dstArchipelago);
-						dstArchipelago.add(srcCluster);
-						archipelagos.add(dstArchipelago);
-						archipelagoFromCluster.put(srcCluster, dstArchipelago);
-					}
-
-					srcCluster = null;
-					dstCluster = null;
-					srcArchipelago = null;
-					dstArchipelago = null;
+		} else { /* Only for two or more adjacent clusters that form archipelagos */
+			for (Link l : links) {
+				for (Cluster c : clusters) {
+					if (c.getNodes().contains(l.getSrc()))
+						srcCluster = c;
+					if (c.getNodes().contains(l.getDst()))
+						dstCluster = c;
 				}
+				for (Archipelago a : archipelagos) {
+					// Is source cluster a part of an existing archipelago?
+					if (a.isMember(srcCluster))
+						srcArchipelago = a;
+					// Is destination cluster a part of an existing archipelago?
+					if (a.isMember(dstCluster))
+						dstArchipelago = a;
+				}
+
+				// Are they both found in an archipelago? If so, then merge the two.
+				if (srcArchipelago != null && dstArchipelago != null &&
+					!srcArchipelago.equals(dstArchipelago)) {
+					archipelagos.remove(srcArchipelago);
+					srcArchipelago.merge(dstArchipelago);
+					archipelagos.add(srcArchipelago);
+					archipelagos.remove(dstArchipelago);
+					archipelagoFromCluster.put(dstCluster, srcArchipelago);
+				}
+				// If neither were found in an existing, then form a new archipelago.
+				else if (srcArchipelago == null && dstArchipelago == null) {
+					Archipelago a = new Archipelago().add(srcCluster).add(dstCluster);
+					archipelagos.add(a);
+					archipelagoFromCluster.put(srcCluster, a);
+					archipelagoFromCluster.put(dstCluster, a);
+				}
+				// If only one is found in an existing, then add the one not found to the
+				// existing.
+				else if (srcArchipelago != null && dstArchipelago == null) {
+					archipelagos.remove(srcArchipelago);
+					srcArchipelago.add(dstCluster);
+					archipelagos.add(srcArchipelago);
+					archipelagoFromCluster.put(dstCluster, srcArchipelago);
+				} else if (srcArchipelago == null && dstArchipelago != null) {
+					archipelagos.remove(dstArchipelago);
+					dstArchipelago.add(srcCluster);
+					archipelagos.add(dstArchipelago);
+					archipelagoFromCluster.put(srcCluster, dstArchipelago);
+				}
+
+				srcCluster = null;
+				dstCluster = null;
+				srcArchipelago = null;
+				dstArchipelago = null;
+			}
+		}
 	}
 
 //------------------------------------------------------------------------------
