@@ -795,6 +795,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		} else {
 			auxiliaryGraph.setRoot(src);
 		}
+		if (!completeGraph.hasNode(auxiliaryGraph.getRoot()))
+			return new BroadcastTree();
 		for (DatapathId node : completeGraph.getNodes()) {
 			//TODO: if we remove all nodes as target (only src), it works with spine_topo but not with paper_topo (big WTF here)
 			if (!node.equals(auxiliaryGraph.getRoot())) {
@@ -890,9 +892,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				continue;
 			nodiVisti.add(node);
 
-			// ERROR [net.floodlightcontroller.topology.DualAscentTopologyManager:Scheduled-0] Error in topology instance task thread
-			// java.lang.NullPointerException: null
-			for (Link link : auxiliaryGraph.getLinks(node)) { //FIXME: there is some null prowling around here... (try with maxPathsToCompute=3)
+			for (Link link : auxiliaryGraph.getLinks(node)) {
 				DatapathId neighbor;
 				if (isDstRooted) {
 					neighbor = link.getSrc();
