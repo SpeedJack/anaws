@@ -1,0 +1,35 @@
+\section{The algorithm}\label{sec:algorithm}
+
+The dual ascent algorithm starts from the source (root) node and works
+iteratively. There are three important data structures:
+
+\begin{description}
+	\item[Root Component] A set of strongly connected nodes, containing at
+		least a target one, which hasn't incoming links from other
+		target nodes or from the root node.
+	\item[Auxiliary Graph] A graph which starts with all the topology nodes
+		(including the non-target ones) and no links. At each iteration
+		of the algorithm, the link with the minimum cost is added.
+	\item[Reduced Cost Table] A table which stores the
+		costs of connected nodes. Element \(R_{ij}\) represents the cost
+		from the node \(i\) to reach the node \(j\). The final
+		cost of the algorithm is the sum of all \(R_{kk}\) values
+		(slacks), where \(k\) is the index of a target node.
+\end{description}
+
+At each step a list of current root components is extracted from the auxiliary
+graph. For each element of the list the algorithm finds, from the starting
+topology, the link with minimum cost that has the root component as destination
+and adds it to the auxiliary graph. Then the reduced cost table is updated by
+decreasing the new cost value with the one that involved that nodes, selected at
+the first iteration of the algorithm (the minimum one). The value obtained is
+the \emph{slack}, quantity to maximize as the purpose of the algorithm, that
+goes to \(R_{jj}\) elements. Also values \(R_{ij}\) are updated considering the
+new paths formed in the auxiliary graph.
+%FIXME: above not so clear in the last part (goes to Rij?!?)
+
+These steps are done until there are no remaining root components or no new
+links from the starting topology. If in the auxiliary graph there are any
+cycles, they are resolved deleting highest cost paths, so that the final result
+is a broadcast tree including all the target nodes with zero or some non-target
+ones.

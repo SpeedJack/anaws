@@ -1,0 +1,13 @@
+\chapter{Dual Ascent}\label{ch:dualascent}
+
+The dual ascent algorithm is the dual version for the problem of the minimum
+\emph{Steiner} tree, which tries to find a directed subtree that connects a
+root node to a selected subset of existing nodes. If in the Steiner tree the
+purpose is to minimize the total cost of the links used in the resulting
+broadcast tree, in the dual ascent version the goal is to maximize a quantity
+derived by the costs, named \emph{slack}. Both versions find the same lower
+bound for the optimal solution, according to the mathematical definition of a
+dual problem.
+
+\input{dualascent/comparison}
+\input{dualascent/algorithm}

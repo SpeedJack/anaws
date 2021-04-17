@@ -1,1 +1,17 @@
-\chapter{Introduction}
+\chapter{Introduction}\label{ch:intro}
+
+Floodlight is an open source and Java based controller. It works with the
+OpenFlow protocol to produce flow table for network switches and is used mainly
+for SDN (Software Defined Networks) to improve flexibility for large scale and
+complex network management.
+
+%FIXME: not so clear (?!?)
+%The communication between an SDN controller and the switches are done by the
+%help of OpenFlow. Floodlight preserves all network rules and gives several
+%directions for the processes on network traffic. It also works on the networks
+%comprising the switches on SDN and the traditional networks together.
+
+For this project we implement a new module which manages routing (the default
+one uses Dijkstra algorithm to inspect the network topology), implementing a
+different type of algorithm, based on the Dual Ascent approach, a dual version
+of the problem for the minimum Steiner tree.
