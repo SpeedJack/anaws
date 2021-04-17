@@ -19,7 +19,7 @@ class Tower( Topo ):
             sn = i + 1
             switch = self.addSwitch( 's%d' % sn )
             switches.append(switch)
-            if (i % 5 == 0):
+            if (i == 0 or i == 5 or i == 19):
                 host = self.addHost( 'h%d' % sn )
                 self.addLink(host, switch)
         links = {		
