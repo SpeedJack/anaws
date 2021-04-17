@@ -1,0 +1,44 @@
+\section{Using Docker}
+
+We have prepared two docker\footnote{\url{https://www.docker.com}} containers,
+one for Floodlight and the other for Mininet and Open vSwitch, and a Docker
+Compose\footnote{\url{https://docs.docker.com/compose}} configuration. All the
+relevant files are under the \code{docker/} directory.
+
+The following versions (or newer) are required:
+\begin{itemize}
+	\item Docker v17.09.0
+	\item Docker Compose v1.17.0
+\end{itemize}
+
+From the \code{docker/} folder, Mininet and Floodlight containers can be started
+with\footnote{All these commands require root privileges or that the user is in
+the \code{docker} group.}:
+\begin{verbatim}
+$ docker-compose up -d
+\end{verbatim}
+
+The first time it is started the Floodlight's container will download all needed
+dependencies from the Maven's repository: it may require some time.
+
+To shutdown both containers:
+\begin{verbatim}
+$ docker-compose down
+\end{verbatim}
+
+To view Floodlight's output:
+\begin{verbatim}
+$ docker logs -f fl
+\end{verbatim}
+
+To get a shell inside the Mininet's container:
+\begin{verbatim}
+$ docker exec -it mn bash
+\end{verbatim}
+Once inside the Mininet's container, you can find the \code{scripts/} folder
+mounted as a volume inside the root's home directory (\code{/root/scripts/}).
+Bash scripts to start up Mininet can be ran from here (or just invoke \code{mn}
+directly).
+
+To recompile Floodlight, just delete \code{target/floodlight.jar}. Floodlight
+will be built again when the container is restarted.

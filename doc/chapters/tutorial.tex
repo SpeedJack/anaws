@@ -1,3 +1,55 @@
 \chapter{Tutorial}\label{appendix:tutorial}
 
-\ldots
+The following works with any Linux distribution.
+
+To develop the module, we have forked the Floodlight's repository. The fork is
+available on Github at \url{https://github.com/SpeedJack/anaws}. The module is
+available on the \code{dualascent} branch (the default branch).
+
+\begin{verbatim}
+$ git clone --recurse-submodules \
+    https://github.com/SpeedJack/anaws.git
+\end{verbatim}
+
+Prerequisites for Floodlight:
+\begin{itemize}
+	\item JDK 8 (it does not work on more recent versions).
+	\item Python with its header files (\code{python-dev}).
+	\item Maven (unfortunately, build with \code{ant} is broken due to
+		upstream not updating their dependencies' snapshots).
+\end{itemize}
+
+We have set up a docker environment to build and run Floodlight and Mininet (see
+below). Using the docker containers is recommended, since this is the setup we
+have used. Anyway, if docker is not an option, Floodlight can be built with:
+
+\begin{verbatim}
+$ mvn package -Dmaven.test.skip=true
+\end{verbatim}
+
+To run Floodlight:
+
+\begin{verbatim}
+$ ./floodlight.sh
+\end{verbatim}
+
+Regarding Mininet and Open vSwitch, we have used the following versions:
+\begin{itemize}
+	\item Mininet v2.2.2
+	\item Open vSwitch 2.13.1
+\end{itemize}
+
+Inside the \code{scripts/} folder there are various Bash scripts useful to run
+Mininet with various topologies. Other scripts that deserves a mention:
+\begin{itemize}
+	\item \code{docker/switch-algorithm.sh} that can be used to switch
+		between the Dijkstra and the Dual Ascent algorithms in the
+		Floodlight's configuration.
+	\item \code{docker/set-*.sh} useful to change other configuration
+		options of Floodlight by passing the new value as argument.
+	\item \code{scripts/collectbw.sh} is the script used to measure the
+		host-to-host bandwidth. It is meant to be run from inside
+		mininet hosts.
+\end{itemize}
+
+\input{tutorial/docker}
