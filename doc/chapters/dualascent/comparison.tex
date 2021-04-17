@@ -13,13 +13,30 @@ subset that involves only the target nodes, so this solution has a limited
 scalability.
 
 \begin{figure}
-\includegraphics{img/steiner.png}
-\caption{The first image shows the network topology. The black nodes are the
-	target one. The second image is the result of a minimum spanning tree
-	algorithm, which contains only the links that are involved as target
-	nodes and it has a cost of 4. The third image shows the result of a
-	minimum Steiner tree algorithm, which considers for the computation also
-	non-target nodes to connect all the target nodes. Its cost is
-	3}\label{fig:steiner}
+	\centering
+	\begin{subfigure}[b]{0.3\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{img/steiner-topology}
+		\caption{An example of a network topology where black nodes are
+		target nodes}\label{subfig:steiner-topology}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{img/steiner-minspanning}
+		\caption{The result of a minimum spanning tree algorithm on the
+		example network topology. The result only contains links that
+		involve target nodes. Its cost is
+		4}\label{subfig:steiner-minspanning}
+	\end{subfigure}
+	\begin{subfigure}[b]{0.3\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{img/steiner-minsteiner}
+		\caption{The result of a minimum Steiner tree algorithm on the
+		example network topology. It includes also non-target nodes to
+		build the tree. Its cost is 3}\label{subfig:steiner-minsteiner}
+	\end{subfigure}
+	\caption{An example of application of a minimum spanning tree algorithm
+		and a minimum Steiner tree algorithm on the same
+		topology}\label{fig:steiner}
 \end{figure}
 
