@@ -104,6 +104,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 				return costLinkLeft.compareTo(costLinkRight);
 		}
 	};
+	private String costCsv = "";
 
 	private class Graph
 	{
@@ -332,6 +333,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		 * debugging.
 		 */
 		printTopology();
+
+		printCostCsv();
 	}
 
 	/*
@@ -764,6 +767,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 	}
 
+	private void printCostCsv()
+	{
+		log.info("Cost CSV:\nsrc,dst,cost\n{}", costCsv);
+	}
+
 	private boolean areConnected(DatapathId node1, DatapathId node2)
 	{
 		if (!connections.containsKey(node1)) {
@@ -862,7 +870,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			for (Link link : tree.getLinks().values())
 				if (link != null)
 					cost += linkCost.get(link);
-		log.info("Dual Ascent cost: {}", cost.toString());
+		costCsv += src + "," + dst + "," + cost + "\n";
 		return tree;
 
 	}
