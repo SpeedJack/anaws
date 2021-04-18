@@ -84,7 +84,7 @@ class Tower( Topo ):
         }
         for a,b_list in links.items():
             for b in b_list:
-                bwidth = int(50 + (a + b - 2)*25)
+                bwidth = int((a + b)*25)
                 self.addLink(switches[a-1],switches[b-1], bw=bwidth)
 
 topos = { 'tower': ( lambda: Tower() ) }
