@@ -184,8 +184,6 @@ public class TopologyInstance implements ITopologyInstance
 		 * debugging.
 		 */
 		printTopology();
-
-		printCostCsv();
 	}
 
 	/*
@@ -618,15 +616,10 @@ public class TopologyInstance implements ITopologyInstance
 		}
 	}
 
-	private void printCostCsv()
-	{
-		log.info("Cost CSV:\nsrc,dst,cost\n{}", costCsv);
-	}
-
 	/*
 	 * Dijkstra that calculates destination rooted trees over the entire topology.
 	 */
-	private BroadcastTree dijkstra(Map<DatapathId, Set<Link>> links, DatapathId root, DatapathId other, Map<Link, Integer> linkCost,
+	private BroadcastTree dijkstra(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
 		boolean isDstRooted)
 	{
 		HashMap<DatapathId, Link> nexthoplinks = new HashMap<DatapathId, Link>();
@@ -704,17 +697,6 @@ public class TopologyInstance implements ITopologyInstance
 		}
 
 		BroadcastTree ret = new BroadcastTree(nexthoplinks, cost);
-
-		int totalCost = 0;
-		if (ret.getLinks().values() != null)
-			for (Link link: ret.getLinks().values())
-				if (link != null)
-					totalCost += linkCost.get(link);
-		if (isDstRooted)
-			costCsv += other + "," + root + "," + totalCost + "\n";
-		else
-			costCsv += root + "," + other + "," + totalCost + "\n";
-
 		return ret;
 	}
 
@@ -1108,7 +1090,7 @@ public class TopologyInstance implements ITopologyInstance
 		 * Use Dijkstra's to find the shortest path, which will also be the first path
 		 * in A
 		 */
-		BroadcastTree bt = dijkstra(copyOfLinkDpidMap, dst, src, linkCost, true);
+		BroadcastTree bt = dijkstra(copyOfLinkDpidMap, dst, linkCost, true);
 		/* add this initial tree as our archipelago's broadcast tree (aSrc == aDst) */
 		aSrc.setBroadcastTree(bt);
 		/* now add the shortest path */
@@ -1173,7 +1155,7 @@ public class TopologyInstance implements ITopologyInstance
 				// Uses Dijkstra's to try to find a shortest path from the spur node to the
 				// destination
 				Path spurPath = buildPath(new PathId(spurNode, dst),
-					dijkstra(copyOfLinkDpidMap, dst, src, linkCost, true));
+					dijkstra(copyOfLinkDpidMap, dst, linkCost, true));
 				if (spurPath == null || spurPath.getPath().isEmpty()) {
 					log.debug("spurPath is null");
 					continue;
