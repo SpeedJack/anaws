@@ -866,13 +866,13 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		BroadcastTree tree = buildBroadcastTree(linkCost, auxiliaryGraph, isDstRooted);
 
-		int cost = 0;
+		/*int cost = 0;
 		if (tree.getLinks().values() != null)
 			for (Link link: tree.getLinks().values())
 				if (link != null)
 					cost += linkCost.get(link);
 		int dijkstraCost = getDijkstraCost(links, isDstRooted ? dst : src, linkCost, isDstRooted);
-		costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";
+		costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";*/
 
 		return tree;
 

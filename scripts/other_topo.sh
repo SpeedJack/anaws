@@ -7,7 +7,7 @@ else
 fi
 
 sudo mn \
---custom nostra-topo.py \
+--custom other-topo.py \
 --topo tower \
 --mac \
 --switch ovs,protocols=OpenFlow13 \
