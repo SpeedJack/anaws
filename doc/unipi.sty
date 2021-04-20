@@ -176,7 +176,7 @@
 \definecolor{codelinenum}{HTML}{808080}
 \colorlet{codenumber}{magenta!60!black}
 
-\lstdefinestyle{ccode}{
+\lstdefinestyle{javacode}{
 	backgroundcolor=\color{codebg},
 	basicstyle=\footnotesize\ttfamily,
 	commentstyle=\color{codecomment},
@@ -184,33 +184,21 @@
 	keywordstyle=\color{codekeyword},
 	numberstyle=\tiny\color{codelinenum},
 	captionpos=b,
-	language=c,
+	language=java,
 	numbers=left,
 	numbersep=5pt,
 	stepnumber=1,
 	tabsize=2,
-	otherkeywords={float64_t},
 	breaklines=true,
 	breakatwhitespace=false,
 	keepspaces=true,
 	showspaces=false,
 	showstringspaces=false,
 	showtabs=false,
-	%postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
-	literate=
-		*{0}{{{\color{codenumber}0}}}{1}
-		{1}{{{\color{codenumber}1}}}{1}
-		{2}{{{\color{codenumber}2}}}{1}
-		{3}{{{\color{codenumber}3}}}{1}
-		{4}{{{\color{codenumber}4}}}{1}
-		{5}{{{\color{codenumber}5}}}{1}
-		{6}{{{\color{codenumber}6}}}{1}
-		{7}{{{\color{codenumber}7}}}{1}
-		{8}{{{\color{codenumber}8}}}{1}
-		{9}{{{\color{codenumber}9}}}{1}
+	postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
 }
 
-\lstset{style=ccode}
+\lstset{style=javacode}
 
 \institute{University of Pisa}
 
