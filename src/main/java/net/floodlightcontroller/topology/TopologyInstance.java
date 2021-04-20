@@ -85,6 +85,12 @@ public class TopologyInstance implements ITopologyInstance
 											 */
 
 	private String costCsv = "";
+	//TODO: REMOVE THIS STRUCTURE WHEN DONE TESTING
+	private final Set<DatapathId> nodiInteressanti = new HashSet<>(Arrays.asList(
+			DatapathId.of("00:00:00:00:00:00:00:01"),
+			DatapathId.of("00:00:00:00:00:00:00:06"),
+			DatapathId.of("00:00:00:00:00:00:00:14")
+	));
 
 	private Map<PathId, List<Path>> pathcache; /* contains computed paths ordered best to worst */
 
@@ -1045,7 +1051,11 @@ public class TopologyInstance implements ITopologyInstance
 		}
 
 		p.setLatency(cost);
-		log.debug("Total cost is {}", cost);
+		DatapathId src = p.getId().getSrc();
+		DatapathId dst = p.getId().getDst();
+		if (nodiInteressanti.contains(src) && nodiInteressanti.contains(dst)) {
+			log.info("INTERESSANTE: Path cost between {} and {} is {}", new Object[] {src, dst, cost.getValue()});
+		}
 		log.debug(p.toString());
 
 	}

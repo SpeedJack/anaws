@@ -88,6 +88,12 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 	private Integer dualCost;
 	private HashMap<DatapathId, HashMap<DatapathId, Boolean>> connections;
 	private Set<Set<DatapathId>> finalRootComponents = new HashSet<>();
+	//TODO: REMOVE THIS STRUCTURE WHEN DONE TESTING
+	private final Set<DatapathId> nodiInteressanti = new HashSet<>(Arrays.asList(
+			DatapathId.of("00:00:00:00:00:00:00:01"),
+			DatapathId.of("00:00:00:00:00:00:00:06"),
+			DatapathId.of("00:00:00:00:00:00:00:14")
+	));
 	private Comparator<Link> comparatorLinks = new Comparator<Link>() {
 		@Override
 		public int compare(Link linkLeft, Link linkRight)
@@ -785,6 +791,8 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return connections.get(node1).get(node2);
 	}
 
+
+	
 	protected BroadcastTree dualAscent(Map<DatapathId, Set<Link>> links, DatapathId src, DatapathId dst,
 		Map<Link, Integer> linkCost, boolean isDstRooted)
 	{
@@ -806,11 +814,22 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 		if (!completeGraph.hasNode(auxiliaryGraph.getRoot()))
 			return new BroadcastTree();
+		
+		//TODO: REMOVE THIS PORTION WHEN DONE TESTING
+		// aggiunta manuale dei nodi target
+		if (!nodiInteressanti.contains(auxiliaryGraph.getRoot())) {
+			return new BroadcastTree(); 
+		}
+		else {
+			nodiInteressanti.forEach(nodo -> {
+				if (!nodo.equals(auxiliaryGraph.getRoot())) {
+					auxiliaryGraph.addTarget(nodo);
+				}
+			});
+		}
+		//TODO: REMOVE THIS PORTION WHEN DONE TESTING
+		 
 		for (DatapathId node : completeGraph.getNodes()) {
-			//TODO: if we remove all nodes as target (only src), it works with spine_topo but not with paper_topo (big WTF here)
-			if (!node.equals(auxiliaryGraph.getRoot())) {
-				auxiliaryGraph.addTarget(node);
-			}
 			connections.put(node, new HashMap<DatapathId, Boolean>());
 			for (DatapathId internalNode : completeGraph.getNodes())
 				connections.get(node).put(internalNode, (node.equals(internalNode)));
@@ -1373,7 +1392,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		p.setLatency(cost);
-		log.debug("Total cost is {}", cost);
+		DatapathId src = p.getId().getSrc();
+		DatapathId dst = p.getId().getDst();
+		if (nodiInteressanti.contains(src) && nodiInteressanti.contains(dst)) {
+			log.info("INTERESSANTE: Path cost between {} and {} is {}", new Object[] {src, dst, cost.getValue()});
+		}
 		log.debug(p.toString());
 
 	}
