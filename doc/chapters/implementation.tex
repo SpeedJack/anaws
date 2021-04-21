@@ -45,7 +45,9 @@ current root component is added to a set in order to instruct the
 \code{findRootComp} method to not return the same root component again avoiding
 an infinite cycle.
 
-The \code{editCosts} method updates the table of reduced costs \ldots.
+The \code{editCosts} method updates the table of reduced costs which is used by
+the \code{findMinArc} method whenever a minimum cost arc has to be retrieved
+from the complete graph of the topology.
 
 Finally, the \code{addArc} method adds \code{minLink} to the list of links in
 the auxiliary graph and updates the \code{connections} matrix that maintains the
@@ -64,7 +66,7 @@ node are removed from the auxiliary graph}, firstline=40,
 lastline=45]{dualAscent.java}
 
 After that, the code shown in \lstref{lst:dualascentinvertlinks} is used to
-\ldots.
+consider whenever the \ldots.
 
 \lstinputlisting[language=java, style=javacode,
 label={lst:dualascentinvertlinks}, caption={If the root node is the destination
@@ -75,4 +77,3 @@ Finally the final broadcast tree is built. This is done using the
 \code{buildBroadcastTree} method which resolves the minimum spanning tree
 problem using the dijkstra's algorithm (this is necessary to remove cycles in
 the final broadcast tree).
-

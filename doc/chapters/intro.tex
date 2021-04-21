@@ -5,13 +5,14 @@ OpenFlow protocol to produce flow table for network switches and is used mainly
 for SDN (Software Defined Networks) to improve flexibility for large scale and
 complex network management.
 
-%FIXME: not so clear (?!?)
-%The communication between an SDN controller and the switches are done by the
-%help of OpenFlow. Floodlight preserves all network rules and gives several
-%directions for the processes on network traffic. It also works on the networks
-%comprising the switches on SDN and the traditional networks together.
+Normally Floodlight makes used of the Dijkstra's algorithm to find the minimum
+cost broadcast tree for the network topology.
 
-For this project we implement a new module which manages routing (the default
-one uses Dijkstra algorithm to inspect the network topology), implementing a
-different type of algorithm, based on the Dual Ascent approach, a dual version
-of the problem for the minimum Steiner tree.
+For this project we implement a new module which manages routing, implementing a
+different type of algorithm to replace Dijkstra, based on the Dual Ascent
+approach, a dual version of the problem for the minimum Steiner tree.
+
+We will then collect statistics on the total cost of the broadcast tree produced
+by Dijkstra and the dual ascent algorithm and we will compare them. We will also
+compare the throughput between hosts when the two algorithms are used using the
+\code{iperf} tool.

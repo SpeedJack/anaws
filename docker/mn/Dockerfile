@@ -17,8 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     x11-xserver-utils \
     xterm \
     sudo \
+    ssh \
  && rm -rf /var/lib/apt/lists/* \
  && chmod +x /ENTRYPOINT.sh
+
+ RUN sed -i 's/^#?PermitRootLogin \(no\|yes\)/PermitRootLogin yes/' /etc/sshd_config \
+ 	&& service ssh enable
 
 EXPOSE 6633 6653 6640
 

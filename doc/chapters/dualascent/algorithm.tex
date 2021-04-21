@@ -23,10 +23,9 @@ topology, the link with minimum cost that has the root component as destination
 and adds it to the auxiliary graph. Then the reduced cost table is updated by
 decreasing the new cost value with the one that involved that nodes, selected at
 the first iteration of the algorithm (the minimum one). The value obtained is
-the \emph{slack}, quantity to maximize as the purpose of the algorithm, that
-goes to \(R_{jj}\) elements. Also values \(R_{ij}\) are updated considering the
-new paths formed in the auxiliary graph.
-%FIXME: above not so clear in the last part (goes to Rij?!?)
+the \emph{slack}, quantity to maximize as the purpose of the algorithm, that is
+memorized into \(R_{jj}\) elements. Also values \(R_{ij}\) are updated
+considering the new paths formed in the auxiliary graph.
 
 These steps are done until there are no remaining root components or no new
 links from the starting topology. If in the auxiliary graph there are any
