@@ -94,6 +94,18 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			DatapathId.of("00:00:00:00:00:00:00:06"),
 			DatapathId.of("00:00:00:00:00:00:00:14")
 	));
+	private final Set<DatapathId> nodiDaEliminare = new HashSet<>(Arrays.asList(
+			DatapathId.of("00:00:00:00:00:00:00:02"),
+			DatapathId.of("00:00:00:00:00:00:00:03"),
+			DatapathId.of("00:00:00:00:00:00:00:04"),
+			DatapathId.of("00:00:00:00:00:00:00:07"),
+			DatapathId.of("00:00:00:00:00:00:00:08"),
+			DatapathId.of("00:00:00:00:00:00:00:09"),
+			DatapathId.of("00:00:00:00:00:00:00:0a"),
+			DatapathId.of("00:00:00:00:00:00:00:0d"),
+			DatapathId.of("00:00:00:00:00:00:00:0e"),
+			DatapathId.of("00:00:00:00:00:00:00:0f")
+	));
 	private Comparator<Link> comparatorLinks = new Comparator<Link>() {
 		@Override
 		public int compare(Link linkLeft, Link linkRight)
@@ -212,6 +224,10 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		public Set<Link> getLinks(DatapathId node)
 		{
 			return this.links.get(node);
+		}
+		
+		public Map<DatapathId, Set<Link>> dammiTuttiILink() {
+			return this.links;
 		}
 
 		public Iterator<Map.Entry<DatapathId, Set<Link>>> getLinksIterator()
@@ -885,14 +901,29 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 
 		BroadcastTree tree = buildBroadcastTree(linkCost, auxiliaryGraph, isDstRooted);
 
-		/*int cost = 0;
+		int cost = 0;
 		if (tree.getLinks().values() != null)
 			for (Link link: tree.getLinks().values())
 				if (link != null)
 					cost += linkCost.get(link);
-		int dijkstraCost = getDijkstraCost(links, isDstRooted ? dst : src, linkCost, isDstRooted);
-		costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";*/
-
+		
+		Graph reducedGraph = new Graph();
+		for (DatapathId node: completeGraph.getNodes()) {
+			if (nodiDaEliminare.contains(node)) {
+				continue;
+			}
+			for (Link link: completeGraph.getLinks(node)) {
+				if (nodiDaEliminare.contains(link.getSrc()) || nodiDaEliminare.contains(link.getDst())) {
+					continue;
+				}
+				reducedGraph.addLink(link);
+			}
+		}
+		
+		int dijkstraCost = getDijkstraCost(reducedGraph.dammiTuttiILink(), isDstRooted ? dst : src, linkCost, isDstRooted);
+		if (nodiInteressanti.contains(src) && nodiInteressanti.contains(dst)) {
+			costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";
+		}
 		return tree;
 
 	}
@@ -1394,9 +1425,11 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		p.setLatency(cost);
 		DatapathId src = p.getId().getSrc();
 		DatapathId dst = p.getId().getDst();
+		/*
 		if (nodiInteressanti.contains(src) && nodiInteressanti.contains(dst)) {
-			log.info("INTERESSANTE: Path cost between {} and {} is {}", new Object[] {src, dst, cost.getValue()});
+			log.debug("INTERESSANTE: Path cost between {} and {} is {}", new Object[] {src, dst, cost.getValue()});
 		}
+		*/
 		log.debug(p.toString());
 
 	}
