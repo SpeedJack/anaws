@@ -5,3 +5,74 @@ version\footnote{Note that master version of Floodlight requires JDK 8.}
 available on Github\footnote{\url{https://github.com/floodlight/floodlight}}.
 More precisely, we started with the version at
 commit~\href{https://github.com/floodlight/floodlight/tree/d737cb05656a6038f4e2277ffb4503d45b7b29cb}{\code{d737cb0}}.
+
+To know how to get the code and execute it, check
+\appendixref{appendix:tutorial}.
+
+The module is implemented in two classes. Both classes are placed in the
+\code{net.floodlightcontroller.topology} package:
+\begin{itemize}
+	\item \code{DualAscentTopologyManager}
+	\item \code{DualAscentTopologyInstance}
+\end{itemize}
+
+The \code{DualAscentTopologyManager} class is just the adaptation of the
+\code{TopologyManager} class for our module. It does not contains any additional
+code other than a substitution of all references to \code{TopologyInstance} into
+\code{DualAscentTopologyInstance}.
+
+The \code{DualAscentTopologyInstance} class contains code taken and adapted from
+the \code{TopologyInstance} class except for the \code{dijkstra} method, which
+has been substituted with the \code{dualAscent} method that is the core of our
+implementation.
+
+The \code{dualAscent} method first performs some initialization of needed data
+structure (we have also added the \code{Graph} class used to represent a graph
+composed by nodes and directed links). Then, the most relevant part that
+implements the dual ascent algorithm is shown in \lstref{lst:dualascentmain}.
+
+\lstinputlisting[language=java, style=javacode, label={lst:dualascentmain},
+caption={Main cycle of the dual ascent algorithm}, firstline=31,
+lastline=38]{dualAscent.java}
+
+The \code{findRootComp} method searches for a root component in the auxiliary
+graph. If no root component is found, it returns \code{null}.
+
+The \code{findMinArc} method returns the arc with minimum cost that is in the
+complete graph of the topology but not in the auxiliary graph. If it returns
+\code{null}, meaning that there is no link satisfying the requirements, the
+current root component is added to a set in order to instruct the
+\code{findRootComp} method to not return the same root component again avoiding
+an infinite cycle.
+
+The \code{editCosts} method updates the table of reduced costs \ldots.
+
+Finally, the \code{addArc} method adds \code{minLink} to the list of links in
+the auxiliary graph and updates the \code{connections} matrix that maintains the
+list of nodes that are connected (directly or indirectly) in the auxiliary
+graph. This matrix is inspected by the \code{areConnected} method which is
+mainly used by the \code{findRootComp} to identify root components.
+
+When there are no new root components, the loop ends. Then, all nodes that are
+not connected (directly or indirectly) with the root node are removed from the
+auxiliary graph, as shown in \lstref{lst:dualascentnodescleanup}, since they are
+not needed.
+
+\lstinputlisting[language=java, style=javacode,
+label={lst:dualascentnodescleanup}, caption={Nodes disconnected from the root
+node are removed from the auxiliary graph}, firstline=40,
+lastline=45]{dualAscent.java}
+
+After that, the code shown in \lstref{lst:dualascentinvertlinks} is used to
+\ldots.
+
+\lstinputlisting[language=java, style=javacode,
+label={lst:dualascentinvertlinks}, caption={If the root node is the destination
+requested by Floodlight, the links are inverted}, firstline=47,
+lastline=67]{dualAscent.java}
+
+Finally the final broadcast tree is built. This is done using the
+\code{buildBroadcastTree} method which resolves the minimum spanning tree
+problem using the dijkstra's algorithm (this is necessary to remove cycles in
+the final broadcast tree).
+

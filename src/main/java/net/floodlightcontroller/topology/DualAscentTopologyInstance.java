@@ -838,7 +838,6 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";*/
 
 		return tree;
-
 	}
 
 	private BroadcastTree buildBroadcastTree(Map<Link, Integer> linkCost,
