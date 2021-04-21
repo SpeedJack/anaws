@@ -900,13 +900,14 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		BroadcastTree tree = buildBroadcastTree(linkCost, auxiliaryGraph, isDstRooted);
-
+		
+		/*
 		int cost = 0;
 		if (tree.getLinks().values() != null)
 			for (Link link: tree.getLinks().values())
 				if (link != null)
 					cost += linkCost.get(link);
-		
+		*/
 		Graph reducedGraph = new Graph();
 		for (DatapathId node: completeGraph.getNodes()) {
 			if (nodiDaEliminare.contains(node)) {
@@ -920,12 +921,38 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 			}
 		}
 		
-		int dijkstraCost = getDijkstraCost(reducedGraph.dammiTuttiILink(), isDstRooted ? dst : src, linkCost, isDstRooted);
+		BroadcastTree dijkstraTree = getDijkstraTree(reducedGraph.dammiTuttiILink(), isDstRooted ? dst : src, linkCost, isDstRooted);
+		long cost = calcolaCostoPath(src, dst, tree);
+		long dijkstraCost = calcolaCostoPath(src, dst, dijkstraTree);
+		
 		if (nodiInteressanti.contains(src) && nodiInteressanti.contains(dst)) {
-			costCsv += src + "," + dst + "," + isDstRooted + "," + cost + "," + dijkstraCost + "\n";
+			costCsv += src + "," + dst + "," + isDstRooted + "," + Long.toString(cost) + "," + Long.toString(dijkstraCost) + "\n";
 		}
 		return tree;
 
+	}
+	
+	private long calcolaCostoPath(DatapathId src, DatapathId dst, BroadcastTree bt) {
+		Path newPath = buildPath(new PathId(src, dst), bt);
+		U64 cost = U64.ZERO;
+		if (newPath != null && !newPath.getPath().isEmpty()) {
+			// Set number of hops. Assuming the list of NPTs is always even.
+			newPath.setHopCount(newPath.getPath().size() / 2);
+
+			for (int i = 0; i <= newPath.getPath().size() - 2; i = i + 2) {
+				DatapathId srcTemp = newPath.getPath().get(i).getNodeId();
+				DatapathId dstTemp = newPath.getPath().get(i + 1).getNodeId();
+				OFPort srcPort = newPath.getPath().get(i).getPortId();
+				OFPort dstPort = newPath.getPath().get(i + 1).getPortId();
+				for (Link l : links.get(newPath.getPath().get(i))) {
+					if (l.getSrc().equals(srcTemp) && l.getDst().equals(dstTemp) &&
+						l.getSrcPort().equals(srcPort) && l.getDstPort().equals(dstPort)) {
+						cost = cost.add(l.getLatency());
+					}
+				}
+			}
+		}	
+		return cost.getValue();
 	}
 
 	private BroadcastTree buildBroadcastTree(Map<Link, Integer> linkCost, Graph auxiliaryGraph, boolean isDstRooted)
@@ -1934,7 +1961,7 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		return archipelagos.stream().map(Archipelago::getId).collect(Collectors.toSet());
 	}
 
-	private int getDijkstraCost(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
+	private BroadcastTree getDijkstraTree(Map<DatapathId, Set<Link>> links, DatapathId root, Map<Link, Integer> linkCost,
 		boolean isDstRooted)
 	{
 		HashMap<DatapathId, Link> nexthoplinks = new HashMap<DatapathId, Link>();
@@ -2012,12 +2039,13 @@ public class DualAscentTopologyInstance implements ITopologyInstance
 		}
 
 		BroadcastTree ret = new BroadcastTree(nexthoplinks, cost);
-
+		/*
 		int totalCost = 0;
 		if (ret.getLinks().values() != null)
 			for (Link link: ret.getLinks().values())
 				if (link != null)
 					totalCost += linkCost.get(link);
-		return totalCost;
+		*/
+		return ret;
 	}
 }
