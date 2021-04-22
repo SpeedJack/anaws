@@ -21,15 +21,23 @@ The \code{DualAscentTopologyManager} class is just the adaptation of the
 code other than a substitution of all references to \code{TopologyInstance} into
 \code{DualAscentTopologyInstance}.
 
-The \code{DualAscentTopologyInstance} class contains code taken and adapted from
-the \code{TopologyInstance} class except for the \code{dijkstra} method, which
-has been substituted with the \code{dualAscent} method that is the core of our
+The \code{DualAscentTopologyInstance} class contains code taken from the
+\code{TopologyInstance} class except for the \code{dijkstra} method, which has
+been substituted with the \code{dualAscent} method that is the core of our
 implementation.
 
 The \code{dualAscent} method first performs some initialization of needed data
 structure (we have also added the \code{Graph} class used to represent a graph
-composed by nodes and directed links). Then, the most relevant part that
-implements the dual ascent algorithm is shown in \lstref{lst:dualascentmain}.
+composed by nodes and directed links). An important part of the initialization
+process is choosing the topology root of the dual ascent algorithm, as shown in
+\lstref{lst:isdstrooted}.
+
+\lstinputlisting[language=java, style=javacode, label={lst:isdstrooted},
+caption={Initialization of the root of the topology}, firstline=14,
+lastline=14]{dualAscent.java}
+
+Then, the most relevant part that implements the dual ascent algorithm is shown
+in \lstref{lst:dualascentmain}.
 
 \lstinputlisting[language=java, style=javacode, label={lst:dualascentmain},
 caption={Main cycle of the dual ascent algorithm}, firstline=31,
@@ -66,14 +74,19 @@ node are removed from the auxiliary graph}, firstline=40,
 lastline=45]{dualAscent.java}
 
 After that, the code shown in \lstref{lst:dualascentinvertlinks} is used to
-consider whenever the \ldots.
+consider the case where the root is the destination of the method, because in
+this case the root is required to be the node that all other nodes converge to,
+and since the original dual ascent computes a path from the root to all other
+target nodes, in this case all paths must start from target nodes and end to the
+root node. This operation is possible thanks to the fact that in the complete
+graph there are always links in the opposite direction.
 
 \lstinputlisting[language=java, style=javacode,
 label={lst:dualascentinvertlinks}, caption={If the root node is the destination
 requested by Floodlight, the links are inverted}, firstline=47,
 lastline=67]{dualAscent.java}
 
-Finally the final broadcast tree is built. This is done using the
-\code{buildBroadcastTree} method which resolves the minimum spanning tree
-problem using the dijkstra's algorithm (this is necessary to remove cycles in
-the final broadcast tree).
+Finally the final broadcast tree is built. This is done using the method
+\code{buildBroadcastTree} which resolves the minimum spanning tree problem using
+the Dijkstra's algorithm (this is necessary to remove cycles in the final
+broadcast tree).

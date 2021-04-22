@@ -42,3 +42,17 @@ directly).
 
 To recompile Floodlight, just delete \code{target/floodlight.jar}. Floodlight
 will be built again when the container is restarted.
+
+To capture traffic with Wireshark, first enter in the Mininet container and set
+the root's password to whatever:
+\begin{verbatim}
+$ docker exec -it mn bash
+# passwd
+\end{verbatim}
+
+Then, configure Wireshark to capture through the \code{sshdump} utility. If the
+``mn'' hostname does not resolve to the IP address of the container, the address
+can be viewed with:
+\begin{verbatim}
+$ docker inspect mn
+\end{verbatim}

@@ -9,5 +9,36 @@ derived by the costs, named \emph{slack}. Both versions find the same lower
 bound for the optimal solution, according to the mathematical definition of a
 dual problem.
 
+The minimum Steiner tree problem is defined as in \eqref{eq:primalproblem}.
+
+\begin{equation}\label{eq:primalproblem}
+	\begin{cases}
+		\min\sum\limits_{(i,j) \in E} c_{ij}y_{ij}\\
+		\sum\limits_{i \in N_1} \sum\limits_{j \in \overline{N_1}}
+		y_{ij} \geq 1 & \forall N_1 \subseteq N : 1 \in N_1\
+		\mathrm{and}\ N_1 \cap V \neq \emptyset\\
+		y_{ij} \in \{0, 1\}
+	\end{cases}
+\end{equation}
+
+Where \(E\) is \ldots; \(c_{ij}\) is \ldots; \(y_{ij}\) is \ldots; \(N\) is
+\ldots; \(V\) is \ldots.
+
+From linear programming, we can derive the dual of the problem in
+\eqref{eq:primalproblem}. This is shown in \eqref{eq:dualproblem}.
+
+\begin{equation}\label{eq:dualproblem}
+	\begin{cases}
+		\max\sum\limits_{k \in V} v_k^k - v_1^k\\
+		v_j^k - v_i^k - w_{ij}^k \leq 0 & k \in V\\
+		\sum\limits_{k \in V} w_{ij}^k \leq c_{ij} & (i, j) \in E\\
+		w_{ij}^k \geq 0
+	\end{cases}
+\end{equation}
+
+Where \(v_i^k\) is \ldots and \(w_{ij}^k\) is \ldots.
+
+The dual ascent algorithm aims to solve the dual problem.
+
 \input{dualascent/comparison}
 \input{dualascent/algorithm}

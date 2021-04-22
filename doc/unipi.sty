@@ -25,6 +25,8 @@
 \RequirePackage{interval}
 \RequirePackage{array}
 \RequirePackage{makecell}
+\RequirePackage{mathtools}
+\RequirePackage{siunitx}
 \RequirePackage[inline]{enumitem}
 \RequirePackage{listings}
 \RequirePackage{nameref}
@@ -168,6 +170,11 @@
 \newcommand\thecourse{\@course}
 \newcommand\thesubtitle{\@subtitle}
 \newcommand\thetitle{\@title}
+
+\sisetup{per-mode=symbol}
+
+\DeclareSIUnit{\gigabits}{Gbits}
+\DeclareSIUnit{\megabits}{Mbits}
 
 \definecolor{codebg}{HTML}{FDF6E3}
 \definecolor{codecomment}{HTML}{93A1A1}

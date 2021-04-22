@@ -1,6 +1,7 @@
 \chapter{Tutorial}\label{appendix:tutorial}
 
-The following works with any Linux distribution.
+The following works with any Linux distribution with proper kernel modules
+installed (usually already present in major distributions).
 
 To develop the module, we have forked the Floodlight's repository. The fork is
 available on Github at \url{https://github.com/SpeedJack/anaws}. The module is
@@ -47,6 +48,8 @@ Mininet with various topologies. Other scripts that deserves a mention:
 		Floodlight's configuration.
 	\item \code{docker/set-*.sh} useful to change other configuration
 		options of Floodlight by passing the new value as argument.
+	\item \code{docker/allow-xterms.sh} used to allow the execution of the
+		Mininet's \code{xterm} command from inside the container.
 	\item \code{scripts/collectbw.sh} is the script used to measure the
 		host-to-host bandwidth. It is meant to be run from inside
 		mininet hosts.
