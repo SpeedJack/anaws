@@ -10,10 +10,10 @@ iteratively. There are three important data structures:
 	\item[Auxiliary Graph] A graph which starts with all the topology nodes
 		(including the non-target ones) and no links. At each iteration
 		of the algorithm, the link with the minimum cost is added.
-	\item[Reduced Cost Table] A table which stores the
-		costs of connected nodes. Element \(R_{ij}\) represents the cost
-		from the node \(i\) to reach the node \(j\). The final
-		cost of the algorithm is the sum of all \(R_{kk}\) values
+	\item[Reduced Cost Table] A table which stores the costs of connected
+		nodes. Element \(R_i^j\) represents the dual cost to reach the
+		node \(i\), selecting as root component the node \(i\). The
+		final cost of the algorithm is the sum of all \(R_k^k\) values
 		(slacks), where \(k\) is the index of a target node.
 \end{description}
 
@@ -24,7 +24,7 @@ and adds it to the auxiliary graph. Then the reduced cost table is updated by
 decreasing the new cost value with the one that involved that nodes, selected at
 the first iteration of the algorithm (the minimum one). The value obtained is
 the \emph{slack}, quantity to maximize as the purpose of the algorithm, that is
-memorized into \(R_{jj}\) elements. Also values \(R_{ij}\) are updated
+memorized into \(R_j^j\) elements. Also values \(R_i^j\) are updated
 considering the new paths formed in the auxiliary graph.
 
 These steps are done until there are no remaining root components or no new

@@ -3,13 +3,14 @@
 The Dijkstra algorithm tries to find a minimum \emph{spanning} tree which
 contains links that connect a set of target nodes.
 
-Differently from that, a minimum \emph{Steiner} tree algorithm considers also
-other non-target nodes to compute the solution. So in this way the lower bound
-of the optimal solution is less or equal than the result provided by a
-\emph{spanning} tree algorithm (as we can see in \figref{fig:steiner}). The
-price to pay is in term of time and computational power, because the algorithm
-has to visit all the possible links and not the subset that involves only the
-target nodes, so this solution has a limited scalability.
+Differently from that, a minimum \emph{Steiner} tree algorithm, as dual ascent,
+considers also other non-target nodes to compute the solution. So in this way
+the lower bound of the optimal solution is less or equal than the result
+provided by a \emph{spanning} tree algorithm (as we can see in
+\figref{fig:steiner}). The price to pay is in term of time and computational
+power, because the algorithm has to visit all the possible links and not the
+subset that involves only the target nodes, so this solution has a limited
+scalability.
 
 \begin{figure}
 	\centering

@@ -21,22 +21,28 @@ The minimum Steiner tree problem is defined as in \eqref{eq:primalproblem}.
 	\end{cases}
 \end{equation}
 
-Where \(E\) is \ldots; \(c_{ij}\) is \ldots; \(y_{ij}\) is \ldots; \(N\) is
-\ldots; \(V\) is \ldots.
+Where \(E\) is the set of links; \(c_{ij}\) are the costs of the complete graph
+for the link that goes from the node i to the node j; \(y_{ij}\) is a binary
+variable which tells if the arc (i, j) is taken into the solution; \(N\) is the
+whole set of nodes; \(V\) is the set of target nodes.
 
 From linear programming, we can derive the dual of the problem in
 \eqref{eq:primalproblem}. This is shown in \eqref{eq:dualproblem}.
 
 \begin{equation}\label{eq:dualproblem}
 	\begin{cases}
-		\max\sum\limits_{k \in V} v_k^k - v_1^k\\
-		v_j^k - v_i^k - w_{ij}^k \leq 0 & k \in V\\
+		\max\sum\limits_{k \in V} R_k^k\\
+		R_j^k - R_i^k - w_{ij}^k \leq 0 & k \in V\\
 		\sum\limits_{k \in V} w_{ij}^k \leq c_{ij} & (i, j) \in E\\
 		w_{ij}^k \geq 0
 	\end{cases}
 \end{equation}
 
-Where \(v_i^k\) is \ldots and \(w_{ij}^k\) is \ldots.
+Where \(R_i^k\) is the dual cost value computed to reach node i, selecting the
+node k as root component and \(w_{ij}^k\) is the maximum slack between
+the node i and the node j. The value is computed at each step calculating the
+difference between the current \(c_{ij}\) and the last \(w_{ij}^k\) recorded
+(initialized to 0).
 
 The dual ascent algorithm aims to solve the dual problem.
 
