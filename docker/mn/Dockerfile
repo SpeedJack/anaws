@@ -21,8 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/* \
  && chmod +x /ENTRYPOINT.sh
 
- RUN sed -i 's/^#?PermitRootLogin \(no\|yes\)/PermitRootLogin yes/' /etc/sshd_config \
- 	&& service ssh enable
+ RUN sed -Ei 's/^#?PermitRootLogin (yes|no|prohibit-password)/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 EXPOSE 6633 6653 6640 22
 
