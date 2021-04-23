@@ -43,8 +43,8 @@ To have a final result we have aggregated all the path's throughputs to show
 what algorithm seems to be the best. As we can see from
 \figref{fig:band-aggregate-eq}, Dijkstra has an average throughput in time
 always better with respect to Dual Ascent (\(\SI{44}{\gigabits\per\second}\) vs
-\(\SI{38.5}{\gigabits\per\second}\)), but both has a similar shape and setup time
-(the throughput is lower in the first two seconds, due to TCP slow start).
+\(\SI{38.5}{\gigabits\per\second}\)), but both has a similar shape and setup
+time (the throughput is lower in the first two seconds, due to TCP slow start).
 
 \begin{figure}[hbt]
 	\centering
@@ -55,9 +55,9 @@ always better with respect to Dual Ascent (\(\SI{44}{\gigabits\per\second}\) vs
 
 \subsection{Different link bandwidth}
 
-For this experiment links have different bandwidth. The bandwidth for each link
-has been set to the sum of the indexes of the attached switches (two for each
-link), multiplied by a factor of 25 (in Mbits/s). In
+For this experiment we have used links with different bandwidth. The bandwidth
+for each link has been set to the sum of the indexes of the attached switches
+(two for each link), multiplied by a factor of 25 (in Mbits/s). In
 \figref{subfig:band-div-dijkstra} we have the average throughputs when the
 Dijkstra's algorithm is used and in \figref{subfig:band-div-dual} there is the
 analogue for the Dual ascent algorithm.
@@ -94,9 +94,9 @@ two seconds.
 	bandwidths}\label{fig:band-aggregate-div}
 \end{figure}
 
-As we can see results are similar, because all the nodes are considered as
-target nodes. So there isn't so many difference between the two algorithm and
-this is shown by the fact that in one case Dijkstra is better and in the other
-cases it is not. To have different results we have to set some nodes as
-non-target, but this is not supported by Floodlight as it wants to compute every
-time the broadcast tree with all nodes of the network.
+As we can see, the obtained results are similar because all the nodes are
+considered as target nodes. So there isn't so many difference between the two
+algorithm and this is shown by the fact that in one case Dijkstra is better and
+in the other cases it is not. To have different results we have to set some
+nodes as non-target, but this is not supported by Floodlight as it wants to
+compute every time the broadcast tree with all the network nodes.

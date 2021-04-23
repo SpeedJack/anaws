@@ -2,8 +2,8 @@
 
 The second group of experiments regards the total cost of the broadcast tree
 produced by the two algorithms. The latency of the links is used to estimate
-the link's costs. We have performed this analysis into two scenarios: in the
-first we consider all nodes of the topology as target nodes; in the second
+the links costs. We have performed this analysis into two scenarios: in the
+first we consider all topology nodes as target nodes; in the second
 instead, we use also non-target nodes.
 
 \subsection{All nodes as target}
@@ -35,9 +35,9 @@ size):
 	algorithms}\label{fig:othertopologies}
 \end{figure}
 
-For each topology we collect and compare the total costs of many executions for
-both Dijkstra and dual ascent broadcast trees, finally aggregated with the
-average. The results are shown in \figref{fig:avg-latency}.
+For each topology we collect and compare the total costs of broadcast trees
+produced by different executions of both Dijkstra and dual ascent, finally
+aggregated with the average. The results are shown in \figref{fig:avg-latency}.
 
 \begin{figure}
 	\centering
@@ -55,7 +55,7 @@ dual ascent setting.
 
 \subsection{Using non-target nodes}
 
-To see the real powerful of dual ascent we have to insert some non-target nodes
+To see the real power of dual ascent we have to insert some non-target nodes
 (not considered by Dijkstra). We have added a configuration, based on the paper
 topology, which considers all the core nodes as non-target, so the target ones
 are only the border nodes. The result target topology can be seen in
@@ -68,8 +68,7 @@ are only the border nodes. The result target topology can be seen in
 	nodes}\label{fig:paper-target}
 \end{figure}
 
-For this kind of experiments the number of hosts in the paper topology is three
-instead of four. We consider the latency for the host-to-host paths and not for
+Here we consider the latency for the host-to-host paths and not for
 the whole broadcast tree. The results are shown in
 \figref{fig:lat-mean-target}.
 
@@ -82,5 +81,5 @@ the whole broadcast tree. The results are shown in
 
 As we can see in this example Dijkstra can only pass from all border nodes, so
 the costs are very high with respect to dual ascent, which computes his best
-path considering all the nodes to compute a broadcast tree that contains at
-least all the target (border) nodes.
+path by considering all nodes in the complete graph, in order to compute a
+broadcast tree that contains at least all the target nodes.

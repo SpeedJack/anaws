@@ -1,50 +1,72 @@
 \chapter{Dual Ascent}\label{ch:dualascent}
 
 The dual ascent algorithm is the dual version for the problem of the minimum
-\emph{Steiner} tree, which tries to find a directed subtree that connects a
-root node to a selected subset of existing nodes. If in the Steiner tree the
-purpose is to minimize the total cost of the links used in the resulting
-broadcast tree, in the dual ascent version the goal is to maximize a quantity
-derived by the costs, named \emph{slack}. Both versions find the same lower
-bound for the optimal solution, according to the mathematical definition of a
-dual problem.
+\emph{Steiner} tree, which tries to find a directed subtree that connects a root
+node to a selected subset of existing nodes called \emph{target} nodes. While in
+the Steiner tree the purpose is to minimize the total cost of the links used in
+the resulting broadcast tree, in the dual ascent version the goal is to maximize
+the flow, which is flowing from node 1 to all other nodes. Both versions find
+the same lower bound for the optimal solution, according to the mathematical
+definition of a dual problem.
 
 The minimum Steiner tree problem is defined as in \eqref{eq:primalproblem}.
 
 \begin{equation}\label{eq:primalproblem}
 	\begin{cases}
-		\min\sum\limits_{(i,j) \in E} c_{ij}y_{ij}\\
-		\sum\limits_{i \in N_1} \sum\limits_{j \in \overline{N_1}}
-		y_{ij} \geq 1 & \forall N_1 \subseteq N : 1 \in N_1\
-		\mathrm{and}\ N_1 \cap V \neq \emptyset\\
+		\min\sum\limits_{(i,j) \in E} c_{ij}y_{ij}\\[10pt]
+		\sum\limits_{h \in N} x_{ih}^k - \sum\limits_{j \in N} x_{ji}^k
+		=
+		\begin{cases}
+			1 & i = 1\\
+			-1 & i = k\\
+			0 & i \neq 1,k\\
+		\end{cases}\\[10pt]
+		x_{ij}^k \leq y_{ij}\\[10pt]
+		x_{ij}^k \geq 0 \qquad \forall (i,j) \in E, \forall k \in
+		V\\[10pt]
 		y_{ij} \in \{0, 1\}
 	\end{cases}
 \end{equation}
+%\begin{equation}\label{eq:primalproblem}
+%	\begin{cases}
+%		\min\sum\limits_{(i,j) \in E} c_{ij}y_{ij}\\
+%		\sum\limits_{i \in N_1} \sum\limits_{j \in \overline{N_1}}
+%		y_{ij} \geq 1 & \forall N_1 \subseteq N : 1 \in N_1\
+%		\mathrm{and}\ N_1 \cap V \neq \emptyset\\
+%		y_{ij} \in \{0, 1\}
+%	\end{cases}
+%\end{equation}
 
 Where \(E\) is the set of links; \(c_{ij}\) are the costs of the complete graph
 for the link that goes from the node i to the node j; \(y_{ij}\) is a binary
-variable which tells if the arc (i, j) is taken into the solution; \(N\) is the
-whole set of nodes; \(V\) is the set of target nodes.
+variable which tells if the arc (i, j) is taken into the solution; \(x_{ij}^k\)
+is a variable represents the amount of flow between node 1 and node k that flows
+on the (i, j) arc; \(N\) is the whole set of nodes; \(V\) is the set of target
+nodes.
 
 From linear programming, we can derive the dual of the problem in
 \eqref{eq:primalproblem}. This is shown in \eqref{eq:dualproblem}.
 
 \begin{equation}\label{eq:dualproblem}
 	\begin{cases}
-		\max\sum\limits_{k \in V} R_k^k\\
-		R_j^k - R_i^k - w_{ij}^k \leq 0 & k \in V\\
-		\sum\limits_{k \in V} w_{ij}^k \leq c_{ij} & (i, j) \in E\\
+		\max\sum\limits_{k \in V} R_k^k\\[10pt]
+		R_j^k - R_i^k - w_{ij}^k \leq 0 & k \in V\\[10pt]
+		\sum\limits_{k \in V} w_{ij}^k \leq c_{ij} & (i, j) \in
+		E\\[10pt]
 		w_{ij}^k \geq 0
 	\end{cases}
 \end{equation}
 
-Where \(R_i^k\) is the dual cost value computed to reach node i, selecting the
-node k as root component and \(w_{ij}^k\) is the maximum slack between
-the node i and the node j. The value is computed at each step calculating the
-difference between the current \(c_{ij}\) and the last \(w_{ij}^k\) recorded
-(initialized to 0).
+Where \(R_i^k\) is the dual flow value computed as the flow that starts from
+node 1 to node k passing through node i, selecting the node k as one of the root
+component nodes (\(R_1^k\) is set to 0 because otherwise there is one redundant
+equation) and \(w_{ij}^k\) is the maximum slack between the node i and the node
+j. The slack value is initialized by computing the difference between the (i, j)
+arc cost (\(c_{ij}\)) and the \(w_{ij}^k\) value, which is initialized to 0, so
+it's the (i, j) arc cost. The slack value is updated in each algorithm's step by
+decreasing it by the amount of slack on the arc with the minimum cost.
 
-The dual ascent algorithm aims to solve the dual problem.
+The dual ascent algorithm aims to solve the dual of the Steiner tree problem.
 
 \input{dualascent/comparison}
 \input{dualascent/algorithm}

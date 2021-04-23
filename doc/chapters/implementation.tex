@@ -61,7 +61,7 @@ Finally, the \code{addArc} method adds \code{minLink} to the list of links in
 the auxiliary graph and updates the \code{connections} matrix that maintains the
 list of nodes that are connected (directly or indirectly) in the auxiliary
 graph. This matrix is inspected by the \code{areConnected} method which is
-mainly used by the \code{findRootComp} to identify root components.
+mainly used by the \code{findRootComp} method to identify root components.
 
 When there are no new root components, the loop ends. Then, all nodes that are
 not connected (directly or indirectly) with the root node are removed from the
@@ -74,12 +74,13 @@ node are removed from the auxiliary graph}, firstline=40,
 lastline=45]{dualAscent.java}
 
 After that, the code shown in \lstref{lst:dualascentinvertlinks} is used to
-consider the case where the root is the destination of the method. In this case
-the root is required to be the node that all other nodes converge to, and since
-the original dual ascent computes a path from the root to all other target
-nodes, in this case all paths must start from target nodes and end to the root
-node. This operation is possible thanks to the fact that in the complete graph
-there are always links in the opposite direction.
+consider the case where the root node is the destination of the
+\code{dualAscent} method. In this case the root is required to be the node that
+all other nodes converge to, and since the original dual ascent computes a path
+from the root to all other target nodes, in this case all paths must start from
+target nodes and end to the root node. This operation is possible thanks to the
+fact that in the complete graph there are always links in the opposite
+direction.
 
 \lstinputlisting[language=java, style=javacode,
 label={lst:dualascentinvertlinks}, caption={If the root node is the destination

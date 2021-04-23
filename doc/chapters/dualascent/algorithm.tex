@@ -1,6 +1,6 @@
 \section{The algorithm}\label{sec:algorithm}
 
-The dual ascent algorithm starts from the source (root) node and works
+The dual ascent algorithm starts from the root node and works
 iteratively. There are three important data structures:
 
 \begin{description}
@@ -12,7 +12,7 @@ iteratively. There are three important data structures:
 		of the algorithm, the link with the minimum cost is added.
 	\item[Reduced Cost Table] A table which stores the costs of connected
 		nodes. Element \(R_i^j\) represents the dual cost to reach the
-		node \(i\), selecting as root component the node \(i\). The
+		node \(i\), selecting as root component the node \(j\). The
 		final cost of the algorithm is the sum of all \(R_k^k\) values
 		(slacks), where \(k\) is the index of a target node.
 \end{description}
@@ -21,11 +21,10 @@ At each step a list of current root components is extracted from the auxiliary
 graph. For each element of the list the algorithm finds, from the starting
 topology, the link with minimum cost that has the root component as destination
 and adds it to the auxiliary graph. Then the reduced cost table is updated by
-decreasing the new cost value with the one that involved that nodes, selected at
+decreasing the new cost value with the one that involved that node, selected at
 the first iteration of the algorithm (the minimum one). The value obtained is
-the \emph{slack}, quantity to maximize as the purpose of the algorithm, that is
-memorized into \(R_j^j\) elements. Also values \(R_i^j\) are updated
-considering the new paths formed in the auxiliary graph.
+the \emph{slack}, that is added into \(R_j^j\) elements. Also values \(R_i^j\)
+are updated considering the new paths formed in the auxiliary graph.
 
 These steps are done until there are no remaining root components or no new
 links from the starting topology. If in the auxiliary graph there are any
