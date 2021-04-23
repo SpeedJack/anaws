@@ -18,12 +18,38 @@ the \code{docker} group.}:
 $ docker-compose up -d
 \end{verbatim}
 
+Docker Compose is just an utility to ease the setup of containers, it is not
+strictly necessary to run the containers. Although not recommended, if Compose
+is not available, containers can be started using only Docker. The following
+\emph{should} be ok (starting from the \code{docker/} directory):
+\begin{verbatim}
+$ cd mn && docker build -t mininet .
+$ cd ../fl && docker build -t floodlight .
+$ cd ../../
+$ docker network create docker_flmnnet
+$ docker volume create docker_fl-m2
+$ docker run -p "8080:8080" -p "1044:1044" \
+    --rm -v "$(pwd)/:/usr/src/myapp/" \
+    -v "docker_fl-m2:/root/.m2" \
+    --network docker_flmnnet --name fl floodlight
+$ docker run -v "$(pwd)/scripts/:/root/scripts/" \
+    -v "/lib/modules:/lib/modules" \
+    -v "/tmp/.X11-unix:/tmp/.X11-unix" -e DISPLAY \
+    --tty --privileged --link fl --name mn mininet
+\end{verbatim}
+
 The first time it is started the Floodlight's container will download all needed
 dependencies from the Maven's repository: it may require some time.
 
 To shutdown both containers:
 \begin{verbatim}
 $ docker-compose down
+\end{verbatim}
+
+Or, without Docker Compose:
+\begin{verbatim}
+docker stop mn
+docker stop fl
 \end{verbatim}
 
 To view Floodlight's output:
