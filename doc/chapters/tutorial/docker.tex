@@ -61,5 +61,5 @@ Then, configure Wireshark to capture through the \code{sshdump} utility. If the
 ``mn'' hostname does not resolve to the IP address of the container, the address
 can be viewed with:
 \begin{verbatim}
-$ docker inspect mn
+$ docker inspect mn | grep IPAddress
 \end{verbatim}
