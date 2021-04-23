@@ -27,7 +27,7 @@ been substituted with the \code{dualAscent} method that is the core of our
 implementation.
 
 The \code{dualAscent} method first performs some initialization of needed data
-structure (we have also added the \code{Graph} class used to represent a graph
+structures (we have also added the \code{Graph} class used to represent a graph
 composed by nodes and directed links). An important part of the initialization
 process is choosing the topology root of the dual ascent algorithm, as shown in
 \lstref{lst:isdstrooted}.
@@ -50,7 +50,7 @@ The \code{findMinArc} method returns the arc with minimum cost that is in the
 complete graph of the topology but not in the auxiliary graph. If it returns
 \code{null}, meaning that there is no link satisfying the requirements, the
 current root component is added to a set in order to instruct the
-\code{findRootComp} method to not return the same root component again avoiding
+\code{findRootComp} method to not return the same root component again, avoiding
 an infinite cycle.
 
 The \code{editCosts} method updates the table of reduced costs which is used by
@@ -74,12 +74,12 @@ node are removed from the auxiliary graph}, firstline=40,
 lastline=45]{dualAscent.java}
 
 After that, the code shown in \lstref{lst:dualascentinvertlinks} is used to
-consider the case where the root is the destination of the method, because in
-this case the root is required to be the node that all other nodes converge to,
-and since the original dual ascent computes a path from the root to all other
-target nodes, in this case all paths must start from target nodes and end to the
-root node. This operation is possible thanks to the fact that in the complete
-graph there are always links in the opposite direction.
+consider the case where the root is the destination of the method. In this case
+the root is required to be the node that all other nodes converge to, and since
+the original dual ascent computes a path from the root to all other target
+nodes, in this case all paths must start from target nodes and end to the root
+node. This operation is possible thanks to the fact that in the complete graph
+there are always links in the opposite direction.
 
 \lstinputlisting[language=java, style=javacode,
 label={lst:dualascentinvertlinks}, caption={If the root node is the destination

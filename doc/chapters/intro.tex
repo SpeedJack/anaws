@@ -1,16 +1,16 @@
 \chapter{Introduction}\label{ch:intro}
 
 Floodlight is an open source and Java based controller. It works with the
-OpenFlow protocol to produce flow table for network switches and is used mainly
+OpenFlow protocol to produce flow tables for network switches and is used mainly
 for SDN (Software Defined Networks) to improve flexibility for large scale and
 complex network management.
 
-Normally Floodlight makes used of the Dijkstra's algorithm to find the minimum
+Normally Floodlight makes use of the Dijkstra's algorithm to find the minimum
 cost broadcast tree for the network topology.
 
 For this project we implement a new module which manages routing, implementing a
-different type of algorithm to replace Dijkstra, based on the Dual Ascent
-approach, a dual version of the problem for the minimum Steiner tree.
+different type of algorithm to replace Dijkstra based on the Dual Ascent
+approach, that is a dual version of the minimum Steiner tree problem.
 
 We will then collect statistics on the total cost of the broadcast tree produced
 by Dijkstra and the dual ascent algorithm and we will compare them. We will also
